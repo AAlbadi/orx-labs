@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>ORX Labs — Apps</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#060608;--surface:#0d0d12;--surface2:#13131a;--border:rgba(255,255,255,0.07);--text:#f0f0f8;--muted:#5a5a72;--orx:#ff7a1a}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.012) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+
+    /* NAV */
+    nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:68px;background:rgba(6,6,8,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--text)}
+    .logo-img{width:38px;height:38px;border-radius:10px;object-fit:cover;border:1px solid rgba(255,122,26,0.3);box-shadow:0 0 12px rgba(255,122,26,0.15)}
+    .logo-text{font-size:17px;font-weight:800;letter-spacing:-.03em}
+    .logo-text span{color:var(--orx)}
+    .nav-right{display:flex;align-items:center;gap:20px}
+    .nav-link{font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;transition:color .2s}
+    .nav-link:hover{color:var(--text)}
+    .social-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:rgba(255,255,255,0.7);text-decoration:none;transition:color .2s;padding:6px 12px;border-radius:100px;background:rgba(255,255,255,0.05);border:1px solid var(--border)}
+    .social-link:hover{color:#fff;background:rgba(255,255,255,0.1);border-color:rgba(255,122,26,0.3)}
+    .social-link svg{width:14px;height:14px;fill:currentColor}
+    .nav-count{font-size:11px;background:rgba(255,122,26,.15);border:1px solid rgba(255,122,26,.25);color:#ff9a3c;padding:3px 9px;border-radius:100px;font-weight:700}
+    .nav-cta{padding:8px 18px;border-radius:100px;background:linear-gradient(135deg,#ff7a1a,#ff9a3c);color:#fff;font-size:13px;font-weight:700;text-decoration:none;transition:opacity .2s;box-shadow:0 0 15px rgba(255,122,26,0.25)}
+    .nav-cta:hover{opacity:.9}
+
+    /* HERO */
+    .hero{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:110px 24px 90px;overflow:hidden}
+    .hero-glow{position:absolute;width:1000px;height:600px;background:radial-gradient(ellipse,rgba(255,122,26,.15),rgba(124,92,252,.06) 40%,transparent 70%);top:-150px;left:50%;transform:translateX(-50%);pointer-events:none}
+    .hero-logo{width:80px;height:80px;border-radius:20px;margin-bottom:24px;border:1.5px solid rgba(255,122,26,0.4);box-shadow:0 0 30px rgba(255,122,26,0.25);animation:pulse-glow 3s ease-in-out infinite alternate}
+    @keyframes pulse-glow{0%{box-shadow:0 0 20px rgba(255,122,26,0.2)}100%{box-shadow:0 0 40px rgba(255,122,26,0.4)}}
+    .hero-eyebrow{display:inline-flex;align-items:center;gap:7px;padding:6px 16px;border-radius:100px;border:1px solid rgba(255,122,26,.3);background:rgba(255,122,26,.08);color:#ff9a3c;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px}
+    .dot{width:6px;height:6px;border-radius:50%;background:#ff7a1a;animation:blink 2s ease-in-out infinite}
+    @keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.65)}}
+    .hero h1{font-size:clamp(48px,8vw,96px);font-weight:900;letter-spacing:-.045em;line-height:.95;margin-bottom:20px}
+    .grad{background:linear-gradient(135deg,#fff 30%,rgba(255,255,255,.55));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .accent{background:linear-gradient(135deg,#ff7a1a,#ffb83c);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-sub{font-size:clamp(15px,2vw,19px);color:var(--muted);line-height:1.6;max-width:540px;margin-bottom:36px}
+    .hero-actions{display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center}
+    .btn-primary{padding:14px 28px;border-radius:100px;background:linear-gradient(135deg,#ff7a1a,#ff9a3c);color:#fff;font-size:15px;font-weight:700;text-decoration:none;transition:opacity .2s,transform .2s;box-shadow:0 0 20px rgba(255,122,26,0.3)}
+    .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+    .btn-ghost{padding:13px 26px;border-radius:100px;border:1px solid var(--border);color:rgba(255,255,255,.7);font-size:15px;font-weight:600;text-decoration:none;transition:border-color .2s,color .2s}
+    .btn-ghost:hover{border-color:rgba(255,255,255,.25);color:#fff}
+    .hero-stats{display:flex;gap:48px;align-items:center;margin-top:52px;padding-top:36px;border-top:1px solid var(--border)}
+    .stat{text-align:center}
+    .stat-n{font-size:32px;font-weight:900;letter-spacing:-.03em;background:linear-gradient(135deg,#fff,rgba(255,255,255,.7));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-l{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
+    .sdiv{width:1px;height:40px;background:var(--border)}
+
+    /* APP GRID OVERVIEW */
+    .apps-overview{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 32px 40px}
+    .ov-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;display:flex;align-items:center;gap:12px}
+    .ov-label::after{content:'';flex:1;height:1px;background:var(--border)}
+    .apps-chips{display:flex;flex-wrap:wrap;gap:10px}
+    .chip{display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:13px;font-weight:600;color:rgba(255,255,255,.7);text-decoration:none;transition:border-color .2s,color .2s,transform .2s}
+    .chip:hover{color:#fff;transform:translateY(-1px);border-color:rgba(255,122,26,0.3)}
+    .chip-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+    /* APP SECTIONS */
+    .apps-wrapper{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 32px 120px}
+    .section-divider{display:flex;align-items:center;gap:16px;padding:64px 0 32px}
+    .section-divider-num{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;flex-shrink:0}
+    .section-divider-line{flex:1;height:1px;background:var(--border)}
+
+    .app-section{border-radius:28px;overflow:hidden;border:1px solid var(--border);transition:border-color .3s}
+    .app-section:hover{border-color:rgba(255,255,255,.12)}
+
+    .app-topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 32px;background:var(--surface);border-bottom:1px solid var(--border);gap:20px;flex-wrap:wrap}
+    .app-identity{display:flex;align-items:center;gap:16px}
+    .app-icon-wrap{width:60px;height:60px;border-radius:15px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px;background:var(--surface2)}
+    .app-name{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+    .app-cat{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+    .app-topbar-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+    .pill{padding:5px 12px;border-radius:100px;background:var(--surface2);border:1px solid var(--border);font-size:11px;font-weight:600;color:var(--muted)}
+
+    .store-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:100px;text-decoration:none;font-size:13px;font-weight:700;color:#fff;transition:opacity .2s,transform .2s;white-space:nowrap;letter-spacing:.01em}
+    .store-btn:hover{opacity:.88;transform:translateY(-1px)}
+
+    .app-screenshot{width:100%;background:var(--surface2);overflow:hidden;position:relative;line-height:0}
+    .app-screenshot img{width:100%;height:auto;display:block;transition:transform .7s cubic-bezier(.25,.46,.45,.94)}
+    .app-screenshot:hover img{transform:scale(1.012)}
+
+    .app-bottom{padding:28px 32px;background:var(--surface);display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--border)}
+    .app-desc{font-size:14px;color:rgba(255,255,255,.45);line-height:1.75;max-width:680px}
+    .app-meta{display:flex;gap:28px;flex-shrink:0;flex-wrap:wrap}
+    .meta-item{text-align:right}
+    .meta-val{font-size:15px;font-weight:700;color:var(--text)}
+    .meta-key{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px}
+
+    /* FOOTER */
+    footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:48px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:24px}
+    .footer-left{display:flex;align-items:center;gap:16px}
+    .footer-socials{display:flex;gap:10px;align-items:center}
+    .footer-links{display:flex;gap:20px;flex-wrap:wrap}
+    .footer-links a{font-size:12px;color:var(--muted);text-decoration:none;transition:color .2s}
+    .footer-links a:hover{color:var(--text)}
+    .footer-copy{font-size:12px;color:var(--muted)}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+    .fu{animation:fadeUp .65s ease both}
+
+    @media(max-width:900px){nav{padding:0 20px}.nav-link{display:none}.hero{padding:80px 20px 60px}.hero-stats{gap:20px}.apps-overview,.apps-wrapper{padding:0 16px 60px}.app-topbar{padding:20px}.app-topbar-right{flex-wrap:wrap}.app-bottom{padding:20px;flex-direction:column}.meta-item{text-align:left}footer{padding:32px 20px;flex-direction:column}}
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo">
+    <img src="logo.png" alt="ORX Labs Logo" class="logo-img"/>
+    <span class="logo-text">ORX <span>Labs</span></span>
+  </a>
+  <div class="nav-right">
+    <span class="nav-count">10 Apps</span>
+    
+    <!-- Social Links -->
+    <a href="https://x.com/OrxLabs" target="_blank" class="social-link" title="X (Twitter) @OrxLabs">
+      <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      <span>@OrxLabs</span>
+    </a>
+    <a href="https://instagram.com/OrxLabs" target="_blank" class="social-link" title="Instagram @OrxLabs">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      <span>@OrxLabs</span>
+    </a>
+
+    <a href="https://apps.apple.com/il/developer/abdul-aziz-rashid-hamed-al-badi/id1868619986" target="_blank" class="nav-cta">App Store &#8599;</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <img src="logo.png" alt="ORX Labs" class="hero-logo fu" style="animation-delay:.02s"/>
+  <div class="hero-eyebrow fu" style="animation-delay:.05s"><span class="dot"></span>Building at the frontier of AI &times; Mobile</div>
+  <h1 class="fu" style="animation-delay:.12s">
+    <span class="grad">Apps built by</span><br/>
+    <span class="accent">ORX Labs</span>
+  </h1>
+  <p class="hero-sub fu" style="animation-delay:.18s">We ship AI-powered mobile experiences that are fast, focused, and beautifully designed &mdash; available on the App Store for iPhone &amp; iPad.</p>
+  <div class="hero-actions fu" style="animation-delay:.24s">
+    <a href="#apps" class="btn-primary">Explore All Apps</a>
+    <a href="https://apps.apple.com/il/developer/abdul-aziz-rashid-hamed-al-badi/id1868619986" target="_blank" class="btn-ghost">Developer Profile &#8599;</a>
+  </div>
+  <div class="hero-stats fu" style="animation-delay:.32s">
+    <div class="stat"><div class="stat-n">10</div><div class="stat-l">Live Apps</div></div>
+    <div class="sdiv"></div>
+    <div class="stat"><div class="stat-n">AI</div><div class="stat-l">Core Tech</div></div>
+    <div class="sdiv"></div>
+    <div class="stat"><div class="stat-n">6+</div><div class="stat-l">Categories</div></div>
+    <div class="sdiv"></div>
+    <div class="stat"><div class="stat-n">Free</div><div class="stat-l">To Download</div></div>
+  </div>
+</section>
+
+<!-- QUICK NAV CHIPS -->
+<div class="apps-overview">
+  <div class="ov-label">Jump to app</div>
+  <div class="apps-chips">
+    <a href="#calories" class="chip"><span class="chip-dot" style="background:#ff7a1a"></span>Calories: AI Scanner</a>
+    <a href="#fishid" class="chip"><span class="chip-dot" style="background:#0099dd"></span>Fish ID: AI Identifier</a>
+    <a href="#truedna" class="chip"><span class="chip-dot" style="background:#8b6020"></span>TrueDNA</a>
+    <a href="#overworldr" class="chip"><span class="chip-dot" style="background:#c8ff00"></span>OVERWORLDR</a>
+    <a href="#mirhal" class="chip"><span class="chip-dot" style="background:#ff5500"></span>Mirhal</a>
+    <a href="#halal" class="chip"><span class="chip-dot" style="background:#00aa55"></span>Halal AI: Smart Scanner</a>
+    <a href="#plant" class="chip"><span class="chip-dot" style="background:#1a9944"></span>Plant Identifier: AI Vision</a>
+    <a href="#money" class="chip"><span class="chip-dot" style="background:#1a8855"></span>Money Scanner: AI</a>
+    <a href="#penrose" class="chip"><span class="chip-dot" style="background:#7c3aed"></span>Penrose: Local AI</a>
+    <a href="#orx" class="chip" style="opacity:.6"><span class="chip-dot" style="background:#5c35c0"></span>ORX Engine (Soon)</a>
+  </div>
+</div>
+
+<!-- ALL APP SECTIONS -->
+<div class="apps-wrapper" id="apps">
+
+  <!-- 1 CALORIES -->
+  <div class="section-divider"><span class="section-divider-num">01</span><div class="section-divider-line"></div><span class="section-divider-num">Health &amp; Fitness</span></div>
+  <div class="app-section" id="calories">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#fff8f2,#fff)"><span>&#x1F525;</span></div>
+        <div><div class="app-name">Calories: AI Scanner</div><div class="app-cat">Health &amp; Fitness</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/calories-ai-scanner/id6761498668" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#ff6b00,#ff9a3c)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="calories.png" alt="Calories AI Scanner" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Instantly scan any food and get accurate calorie counts, macros, and nutritional breakdown powered by AI. Take a photo, speak, or type &mdash; intelligent nutrition tracking that actually understands what you eat. Build streaks, track weight progress, and hit your goals with one polished dashboard.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">15.6 MB</div><div class="meta-key">Size</div></div>
+        <div class="meta-item"><div class="meta-val">EN +14</div><div class="meta-key">Languages</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 FISH ID -->
+  <div class="section-divider"><span class="section-divider-num">02</span><div class="section-divider-line"></div><span class="section-divider-num">Reference</span></div>
+  <div class="app-section" id="fishid">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#001a4d,#0066cc)"><span>&#x1F41F;</span></div>
+        <div><div class="app-name">Fish ID: AI Identifier</div><div class="app-cat">Reference</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/fish-id-ai-identifier/id6760550267" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#0033aa,#0099dd)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="fishid.png" alt="Fish ID AI Identifier" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Point your camera at any fish and instantly identify the species with AI precision. Get insights on size, habitat, diet, and lifespan for thousands of species worldwide. Built for anglers, divers, marine biologists, and ocean enthusiasts who want to learn more about every fish they encounter.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">16.9 MB</div><div class="meta-key">Size</div></div>
+        <div class="meta-item"><div class="meta-val">EN +14</div><div class="meta-key">Languages</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 TRUEDNA -->
+  <div class="section-divider"><span class="section-divider-num">03</span><div class="section-divider-line"></div><span class="section-divider-num">Utilities</span></div>
+  <div class="app-section" id="truedna">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#1a1008,#4a3010)"><span>&#x1F9EC;</span></div>
+        <div><div class="app-name">TrueDNA</div><div class="app-cat">Utilities</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/truedna/id6760348601" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#3d2a10,#8b6020)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="truedna.png" alt="TrueDNA" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Walk in your ancestors&rsquo; footsteps. TrueDNA reveals your ancestry makeup, traces your genetic journey across generations, and helps you discover your DNA roots with stunning visualizations &mdash; from ethnicity breakdowns to family trait connections spanning centuries of history.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">25.5 MB</div><div class="meta-key">Size</div></div>
+        <div class="meta-item"><div class="meta-val">EN +16</div><div class="meta-key">Languages</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 OVERWORLDR -->
+  <div class="section-divider"><span class="section-divider-num">04</span><div class="section-divider-line"></div><span class="section-divider-num">Travel</span></div>
+  <div class="app-section" id="overworldr">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:#c8ff00;border-radius:15px"><span style="font-size:18px;font-weight:900;color:#111;font-family:Inter,sans-serif;letter-spacing:-.5px">OW</span></div>
+        <div><div class="app-name">OVERWORLDR</div><div class="app-cat">Travel</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/overworldr/id6758109383" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#5a7a00,#a0cc00);color:#000">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="overworldr.png" alt="OVERWORLDR" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">The world&rsquo;s smartest travel companion. OVERWORLDR tracks your passport power across 150+ countries, builds your Travel ID, and lets an AI Trip Planner design your perfect itinerary based on your budget and experience level. From visa-free flights to hidden gems &mdash; explore smarter.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">77 MB</div><div class="meta-key">Size</div></div>
+        <div class="meta-item"><div class="meta-val">English</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 MIRHAL -->
+  <div class="section-divider"><span class="section-divider-num">05</span><div class="section-divider-line"></div><span class="section-divider-num">Travel &middot; GCC</span></div>
+  <div class="app-section" id="mirhal">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#cc3300,#ff6600)"><span style="font-size:22px;color:#fff;font-family:serif">&#x645;</span></div>
+        <div><div class="app-name">Mirhal &nbsp;<span style="font-size:16px;color:var(--muted);font-weight:400">&#x645;&#x631;&#x62D;&#x627;&#x644;</span></div><div class="app-cat">Travel &middot; GCC Explorer</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/mirhal/id6757742637" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#cc3300,#ff5500)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="mirhal.png" alt="Mirhal" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Discover the best of the GCC outdoors. Mirhal is your guide to beaches, campsites, RV parks, and hidden trails across Saudi Arabia, UAE, and the wider Gulf. Community-verified spots, interactive maps, and trail tracking &mdash; built for the explorer in the Arabian Peninsula.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">32 MB</div><div class="meta-key">Size</div></div>
+        <div class="meta-item"><div class="meta-val">English</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 HALAL AI -->
+  <div class="section-divider"><span class="section-divider-num">06</span><div class="section-divider-line"></div><span class="section-divider-num">Utilities</span></div>
+  <div class="app-section" id="halal">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#003322,#009955)"><span>&#x262A;&#xFE0F;</span></div>
+        <div><div class="app-name">Halal AI: Smart Scanner</div><div class="app-cat">Utilities &middot; &#x645;&#x639;&#x631;&#x641;&#x629; &#x627;&#x644;&#x62D;&#x644;&#x627;&#x644;</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/halal-ai-smart-scanner/id6760674807" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#006633,#00cc66)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="halalAI.png" alt="Halal AI Smart Scanner" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Instantly scan product barcodes and ingredients to verify halal certification. AI-powered with a comprehensive global halal database covering food, cosmetics, and pharmaceuticals. Know what you&rsquo;re consuming &mdash; clearly and instantly.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">iPhone &middot; iPad</div><div class="meta-key">Device</div></div>
+        <div class="meta-item"><div class="meta-val">EN</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 PLANT IDENTIFIER -->
+  <div class="section-divider"><span class="section-divider-num">07</span><div class="section-divider-line"></div><span class="section-divider-num">Utilities</span></div>
+  <div class="app-section" id="plant">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#0a2e1a,#147a3a)"><span>&#x1F33F;</span></div>
+        <div><div class="app-name">Plant Identifier: AI Vision</div><div class="app-cat">Utilities</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/plant-identifier-ai-vision/id6760238776" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#0d4422,#1a9944)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="plantID.png" alt="Plant Identifier AI Vision" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Photograph any plant for instant AI identification. Get care tips, toxicity warnings, detailed botanical facts, and watering guides &mdash; for houseplants, wildflowers, trees, and herbs. Your pocket botanist, powered by visual AI.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">iPhone &middot; iPad</div><div class="meta-key">Device</div></div>
+        <div class="meta-item"><div class="meta-val">EN</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8 MONEY SCANNER -->
+  <div class="section-divider"><span class="section-divider-num">08</span><div class="section-divider-line"></div><span class="section-divider-num">Finance</span></div>
+  <div class="app-section" id="money">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#0a2820,#1a6644)"><span>&#x1F4B5;</span></div>
+        <div><div class="app-name">Money Scanner: AI Cash ID</div><div class="app-cat">Finance</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/money-scanner-ai-cash-id/id6760224482" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#0a3d22,#1a8855)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="monnyscanner.png" alt="Money Scanner AI Cash ID" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Scan banknotes to verify authenticity, identify currency from 150+ countries, and access real-time exchange rates in seconds. Your AI-powered financial lens &mdash; built for travelers, traders, and anyone handling foreign cash.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">iPhone &middot; iPad</div><div class="meta-key">Device</div></div>
+        <div class="meta-item"><div class="meta-val">EN</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9 PENROSE -->
+  <div class="section-divider"><span class="section-divider-num">09</span><div class="section-divider-line"></div><span class="section-divider-num">Productivity</span></div>
+  <div class="app-section" id="penrose">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#240a44,#7c3aed)"><span>&#x2B21;</span></div>
+        <div><div class="app-name">Penrose: Local AI Assistant</div><div class="app-cat">Productivity</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">Free &middot; In-App Purchases</span>
+        <span class="pill">iPhone &middot; iPad</span>
+        <a href="https://apps.apple.com/il/app/penrose-local-ai-assistant/id6758330423" target="_blank" class="store-btn" style="background:linear-gradient(135deg,#3d1a7a,#7c3aed)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.22.15-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04zm-5.71-16c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          View on App Store
+        </a>
+      </div>
+    </div>
+    <div class="app-screenshot"><img src="PenroseAI.png" alt="Penrose Local AI Assistant" loading="lazy"/></div>
+    <div class="app-bottom">
+      <p class="app-desc">Run powerful AI models entirely on-device. 100% private, offline-first, and blazing fast &mdash; your personal AI assistant that never sends your data to the cloud. Chat, summarize, write, and reason without an internet connection.</p>
+      <div class="app-meta">
+        <div class="meta-item"><div class="meta-val">4+</div><div class="meta-key">Age Rating</div></div>
+        <div class="meta-item"><div class="meta-val">iPhone &middot; iPad</div><div class="meta-key">Device</div></div>
+        <div class="meta-item"><div class="meta-val">EN</div><div class="meta-key">Language</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10 ORX COMING SOON -->
+  <div class="section-divider"><span class="section-divider-num">10</span><div class="section-divider-line"></div><span class="section-divider-num">Coming Soon</span></div>
+  <div class="app-section" id="orx" style="opacity:.6">
+    <div class="app-topbar">
+      <div class="app-identity">
+        <div class="app-icon-wrap" style="background:linear-gradient(135deg,#160a30,#5c35c0)"><span>&#x26A1;</span></div>
+        <div><div class="app-name">ORX Outreach Engine</div><div class="app-cat">Productivity &middot; AI</div></div>
+      </div>
+      <div class="app-topbar-right">
+        <span class="pill">In Development</span>
+        <span class="pill" style="background:rgba(255,122,26,.15);border-color:rgba(255,122,26,.25);color:#ff9a3c">2026</span>
+      </div>
+    </div>
+    <div style="padding:60px 32px;background:var(--surface2);text-align:center;border-top:1px solid var(--border)">
+      <div style="font-size:40px;margin-bottom:16px">&#x26A1;</div>
+      <p style="font-size:16px;font-weight:600;color:rgba(255,255,255,.4);margin-bottom:8px">Screenshot coming soon</p>
+      <p style="font-size:13px;color:var(--muted)">Autonomous AI cold-outreach pipeline &mdash; real-time context harvesting, hyper-personalized email generation, and a built-in AI negotiator that books meetings.</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-left">
+    <a href="#" class="logo">
+      <img src="logo.png" alt="ORX Labs Logo" class="logo-img" style="width:32px;height:32px"/>
+      <span class="logo-text" style="font-size:15px">ORX <span style="color:var(--orx)">Labs</span></span>
+    </a>
+  </div>
+  <div class="footer-links">
+    <a href="https://x.com/OrxLabs" target="_blank">X (@OrxLabs)</a>
+    <a href="https://instagram.com/OrxLabs" target="_blank">Instagram (@OrxLabs)</a>
+    <a href="https://apps.apple.com/il/developer/abdul-aziz-rashid-hamed-al-badi/id1868619986" target="_blank">Developer Profile</a>
+    <a href="https://apps.apple.com/il/app/calories-ai-scanner/id6761498668" target="_blank">Calories</a>
+    <a href="https://apps.apple.com/il/app/fish-id-ai-identifier/id6760550267" target="_blank">Fish ID</a>
+    <a href="https://apps.apple.com/il/app/truedna/id6760348601" target="_blank">TrueDNA</a>
+    <a href="https://apps.apple.com/il/app/overworldr/id6758109383" target="_blank">OVERWORLDR</a>
+    <a href="https://apps.apple.com/il/app/mirhal/id6757742637" target="_blank">Mirhal</a>
+  </div>
+  <p class="footer-copy">&copy; 2026 ORX Labs. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

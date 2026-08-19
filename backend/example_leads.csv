@@ -1,0 +1,4 @@
+email,first_name,last_name,company,role,linkedin_url,github_username,academic_profile
+prospect1@gmail.com,Abdu,Al Badi,ORX Labs,Founder,https://www.linkedin.com/in/abdu-aziz-rashid,abdu-orx,http://export.arxiv.org/api/query?search_query=au:AlBadi
+prospect2@mit.edu,Elena,Rostova,MIT CSAIL,PhD Candidate,https://www.linkedin.com/in/elena-rostova-cs,elena-cxx-compiler,LLVM optimizations
+prospect3@stripe.com,Marcus,Vance,Stripe,Staff Engineer,https://www.linkedin.com/in/marcus-vance-stripe,marcus-v,payment routing optimization

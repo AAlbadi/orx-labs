@@ -451,28 +451,33 @@ class SearchService:
 
         def _fetch_single_dork(dork_str: str) -> List[Dict[str, Any]]:
             items = []
-            try:
-                with DDGS() as ddgs:
-                    fetch_count = min(max(max_results * 2, 50), 100)
-                    res = list(ddgs.text(dork_str, max_results=fetch_count))
-                    for r in res:
-                        url = r.get("href", "")
-                        clean_url = self._clean_linkedin_url(url)
-                        if clean_url and clean_url not in seen_urls:
-                            title = r.get("title", "")
-                            body = r.get("body", "")
-                            parsed = self._parse_linkedin_title(title, body)
+            for backend_name in ["lite", "html", "api"]:
+                try:
+                    with DDGS() as ddgs:
+                        fetch_count = min(max(max_results * 2, 20), 40)
+                        res = list(ddgs.text(dork_str, max_results=fetch_count, backend=backend_name))
+                        if not res:
+                            continue
+                        for r in res:
+                            url = r.get("href", "")
+                            clean_url = self._clean_linkedin_url(url)
+                            if clean_url and clean_url not in seen_urls:
+                                title = r.get("title", "")
+                                body = r.get("body", "")
+                                parsed = self._parse_linkedin_title(title, body)
 
-                            # Enforce strict location check
-                            if target_location and not self.is_location_match(parsed["location"], body, target_location):
-                                continue
+                                # Location check
+                                if target_location and not self.is_location_match(parsed["location"], body, target_location):
+                                    continue
 
-                            parsed["linkedin_url"] = clean_url
-                            parsed["title"] = title
-                            parsed["snippet"] = body
-                            items.append(parsed)
-            except Exception:
-                pass
+                                parsed["linkedin_url"] = clean_url
+                                parsed["title"] = title
+                                parsed["snippet"] = body
+                                items.append(parsed)
+                        if items:
+                            break
+                except Exception:
+                    continue
             return items
 
         # Execute dorks in batches of 3 to maximize throughput while avoiding rate limit resets

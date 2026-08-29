@@ -31,6 +31,9 @@ class LeadFinderAgent:
 
     async def _resolve_company_domain(self, company_name: str) -> str:
         clean_name = company_name.strip()
+        if not clean_name:
+            return ""
+
         clean_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_name.lower())
         if not clean_slug:
             return ""
@@ -38,46 +41,38 @@ class LeadFinderAgent:
         if clean_slug in self._domain_cache:
             return self._domain_cache[clean_slug]
 
-        blacklist = {
-            "linkedin.com", "wikipedia.org", "facebook.com", "instagram.com", "twitter.com", "x.com",
-            "bloomberg.com", "youtube.com", "glassdoor.com", "zoominfo.com", "pitchbook.com",
-            "crunchbase.com", "yellowpages.com", "yelp.com", "tripadvisor.com", "indeed.com",
-            "reuters.com", "forbes.com", "grokipedia.com", "google.com", "duckduckgo.com",
-            "mobygames.com", "fandom.com", "trustpilot.com", "apple.com", "play.google.com"
-        }
+        # Fast slug variations
+        clean_name_base = re.sub(
+            r'(?i)\b(?:inc|llc|ltd|limited|corp|corporation|group|holdings|co|company|partners|ventures|capital|technologies|tech|solutions|services|management|global|international)\b\.?',
+            '',
+            clean_name
+        ).strip()
+        base_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_name_base.lower()) if clean_name_base else ""
 
-        name_tokens = [t.lower() for t in re.findall(r'[a-zA-Z]{3,}', clean_name)]
+        slugs = [clean_slug]
+        if base_slug and base_slug != clean_slug:
+            slugs.append(base_slug)
 
-        loop = asyncio.get_event_loop()
-        def _search_domain():
-            # 1. Search web for the exact corporate official website
-            try:
-                with DDGS() as ddgs:
-                    res = list(ddgs.text(f"{clean_name} official website", max_results=5))
-                    for r in res:
-                        href = r.get("href", "")
-                        match = re.search(r'https?://(?:www\.)?([a-zA-Z0-9\.\-]+\.[a-zA-Z]{2,})', href)
-                        if match:
-                            dom = match.group(1).lower().strip()
-                            if not any(b in dom for b in blacklist):
-                                # Relevance check: at least one significant token in domain
-                                if not name_tokens or any(tok in dom.replace(".", "") for tok in name_tokens):
-                                    mx_hosts, _ = self.verifier.get_mx_records(dom)
-                                    if mx_hosts:
-                                        return dom
-            except Exception:
-                pass
+        # Candidate TLD extensions to test quickly
+        candidate_domains = []
+        for s in slugs:
+            candidate_domains.extend([
+                f"{s}.com",
+                f"{s}.ca",
+                f"{s}.io",
+                f"{s}.ai",
+                f"{s}.co",
+                f"{s}.co.uk",
+                f"{s}.org"
+            ])
 
-            # 2. Probe standard extensions if web search returned no match
-            for ext in EXTENSIONS:
-                guess = f"{clean_slug}{ext}"
-                mx_hosts, _ = self.verifier.get_mx_records(guess)
-                if mx_hosts:
-                    return guess
+        for dom in candidate_domains:
+            mx_hosts, _ = self.verifier.get_mx_records(dom)
+            if mx_hosts:
+                self._domain_cache[clean_slug] = dom
+                return dom
 
-            return f"{clean_slug}.com"
-
-        dom = await loop.run_in_executor(None, _search_domain)
+        dom = f"{clean_slug}.com"
         self._domain_cache[clean_slug] = dom
         return dom
 

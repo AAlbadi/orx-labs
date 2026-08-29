@@ -309,7 +309,10 @@ class EmailVerifierService:
             return self._mx_cache[clean_d]
 
         try:
-            answers = dns.resolver.resolve(clean_d, 'MX')
+            resolver = dns.resolver.Resolver()
+            resolver.lifetime = 1.2
+            resolver.timeout = 1.0
+            answers = resolver.resolve(clean_d, 'MX')
             mx_hosts = sorted([(r.preference, str(r.exchange).rstrip('.')) for r in answers])
             hosts = [h[1] for h in mx_hosts if h[1]]
             

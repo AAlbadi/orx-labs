@@ -75,6 +75,8 @@ LOCATION_MAP = {
     "new york city": "New York",
     "ny": "New York",
     "canada": "Canada",
+    "canda": "Canada",
+    "canad": "Canada",
     "canadian": "Canada",
     "toronto": "Canada",
     "vancouver": "Canada",
@@ -92,11 +94,14 @@ LOCATION_MAP = {
     "la": "Los Angeles",
     "los angeles": "Los Angeles",
     "miami": "Miami",
+    "california": "United States",
+    "califonia": "United States",
     "us": "United States",
     "usa": "United States",
     "united states": "United States",
     # Europe
     "london": "United Kingdom",
+    "londn": "United Kingdom",
     "uk": "United Kingdom",
     "u.k.": "United Kingdom",
     "britain": "United Kingdom",
@@ -284,8 +289,12 @@ class SearchService:
         if cand_loc_lower:
             return any(term in cand_loc_lower for term in target_terms)
 
-        # If location is not specified, snippet must contain target terms:
-        return any(term in cand_snip_lower for term in target_terms)
+        # If location is in snippet:
+        if any(term in cand_snip_lower for term in target_terms):
+            return True
+
+        # Default to True since search dork already scoped the region
+        return True
 
     def extract_search_parameters(self, prompt: str) -> Dict[str, Any]:
         clean = prompt.strip()
@@ -377,9 +386,7 @@ class SearchService:
         if target_company:
             dork_parts.append(f'"{target_company}"')
         if detected_location:
-            loc_aliases = LOCATION_EXPANSIONS.get(detected_location, [detected_location])
-            loc_str = " OR ".join([f'"{loc}"' for loc in loc_aliases])
-            dork_parts.append(f'({loc_str})')
+            dork_parts.append(f'"{detected_location}"')
 
         return {
             "category": category,

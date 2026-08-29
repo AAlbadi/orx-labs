@@ -132,16 +132,6 @@ class LeadFinderAgent:
             logger.error(f"Search error: {e}")
             candidates = []
 
-        if not candidates and api_key:
-            yield await emit("log", {"message": "Sourcing verified profiles via Apollo Enterprise Live Directory..."})
-            apollo_res = await self.apollo_api.search_and_enrich_people(
-                query=effective_prompt,
-                limit=target_limit,
-                api_key=api_key
-            )
-            if apollo_res.get("success") and apollo_res.get("leads"):
-                candidates = apollo_res["leads"]
-
         if not candidates:
             yield await emit("log", {"message": "No new matching profiles found on this page — try broadening your query."})
             yield await emit("complete", {

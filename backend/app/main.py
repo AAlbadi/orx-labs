@@ -41,6 +41,15 @@ apollo_service = ApolloApiService()
 verifier = EmailVerifierService()
 llm_service = LlmQueryService()
 
+@app.get("/")
+async def root():
+    return {
+        "service": "LeadsHunter Autonomous Lead Intelligence API",
+        "status": "online",
+        "docs_url": "/docs",
+        "health_check": "/api/status"
+    }
+
 @app.get("/api/status")
 async def get_status():
     """System health check, Apollo API status, and LLM status."""

@@ -29,6 +29,8 @@ class LlmQueryService:
             if api_key.startswith("AQ.") or api_key.startswith("AIza") or "gemini" in api_key.lower() or os.getenv("GEMINI_API_KEY"):
                 gemini_res = await self._call_gemini_flash(user_prompt, api_key)
                 if gemini_res:
+                    if gemini_res.get("dork_query"):
+                        gemini_res["dork_query"] = re.sub(r'\s+AND\s+', ' ', gemini_res["dork_query"])
                     return gemini_res
 
             # 2. Try OpenAI / Groq API

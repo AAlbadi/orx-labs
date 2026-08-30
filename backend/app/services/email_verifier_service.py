@@ -16,7 +16,6 @@ ENTERPRISE_GATEWAYS = {
     "Mimecast", "Proofpoint Enterprise", "Cisco IronPort", "Barracuda"
 }
 
-# Known Mega-Corporations (>5,000 to 150,000+ employees with Directory Edge Blocking)
 MEGA_ENTERPRISE_DOMAINS = {
     "tesla.com", "apple.com", "microsoft.com", "amazon.com", "walmart.com",
     "google.com", "meta.com", "deloitte.com", "pwc.com", "ey.com", "kpmg.com",
@@ -24,6 +23,25 @@ MEGA_ENTERPRISE_DOMAINS = {
     "boeing.com", "lockheedmartin.com", "pfizer.com", "johnsonandjohnson.com",
     "ibm.com", "oracle.com", "salesforce.com", "cisco.com", "intel.com",
     "accenture.com", "mckinsey.com", "bcg.com", "bain.com", "guidewire.com"
+}
+
+MEGA_ENTERPRISE_STEMS = {
+    "ey.", "ernstyoung", "deloitte", "pwc", "pricewaterhouse", "kpmg",
+    "mckinsey", "bcg", "bain", "accenture", "goldmansachs", "morganstanley",
+    "jpmorgan", "chase", "bankofamerica", "wellsfargo", "citigroup", "citi",
+    "barclays", "ubs", "apple.", "google.", "microsoft.", "amazon.", "meta.",
+    "tesla.", "nvidia.", "netflix.", "uber.", "salesforce.", "oracle.", "ibm.",
+    "cisco.", "intel.", "adobe.", "sony.", "samsung.", "disney.", "nike.",
+    "pfizer.", "moderna.", "johnsonandjohnson", "walmart.", "target.", "boeing."
+}
+
+MEGA_ENTERPRISE_NAMES = {
+    "ernst & young", "ey", "deloitte", "pwc", "pricewaterhousecoopers", "kpmg",
+    "mckinsey & company", "mckinsey", "boston consulting group", "bcg", "bain & company", "bain",
+    "accenture", "goldman sachs", "morgan stanley", "jpmorgan", "jp morgan", "chase",
+    "bank of america", "wells fargo", "citigroup", "citi", "apple", "google", "alphabet",
+    "microsoft", "amazon", "meta", "facebook", "tesla", "nvidia", "netflix", "uber",
+    "salesforce", "oracle", "ibm", "cisco", "intel", "boeing", "walmart", "pfizer"
 }
 
 POST_NOMINALS_REGEX = re.compile(
@@ -189,12 +207,18 @@ class EmailVerifierService:
         self._catch_all_cache: Dict[str, bool] = {}
 
     @staticmethod
-    def is_mega_enterprise(domain: str, headcount: int = 0, provider: str = "") -> bool:
+    def is_mega_enterprise(domain: str, headcount: int = 0, provider: str = "", company_name: str = "") -> bool:
         """Determines if a company is a Mega-Enterprise requiring Pipeline B (On-Demand Apollo Reveal)."""
         d = domain.lower().replace("www.", "").strip()
+        comp = company_name.lower().strip()
+        
         if d in MEGA_ENTERPRISE_DOMAINS:
             return True
-        if headcount and headcount >= 2500:
+        if any(stem in d for stem in MEGA_ENTERPRISE_STEMS):
+            return True
+        if comp and any(name in comp for name in MEGA_ENTERPRISE_NAMES):
+            return True
+        if headcount and headcount >= 2000:
             return True
         if provider in ENTERPRISE_GATEWAYS:
             return True
@@ -399,12 +423,13 @@ class EmailVerifierService:
         domain: str,
         middle_initial: str = "",
         headcount: int = 0,
-        role: str = ""
+        role: str = "",
+        company_name: str = ""
     ) -> Dict[str, Any]:
         """
-        Dual Pipeline Classification:
+        Executes Dual-Pipeline Verification:
         - Pipeline A: Startups / SMBs -> Free automatic verification ($0)
-        - Pipeline B: Mega-Enterprises (>2.5k employees / Fortune 500) -> Safely Locked for On-Demand Apollo Reveal
+        - Pipeline B: Mega-Enterprises (>2.0k employees / Fortune 500 / Big 4 / Tech Giants) -> Safely Locked for On-Demand Apollo Reveal
         """
         clean_d = self.clean_domain(domain)
         if not clean_d:
@@ -415,6 +440,18 @@ class EmailVerifierService:
                 "mail_provider": "Unknown",
                 "is_enterprise_locked": False,
                 "pipeline_type": "FREE_UNLOCKED",
+                "mx_host": None
+            }
+
+        # Guard against truncated names with only initial (e.g. "Celia R.") or 2-letter usernames
+        if len(first_name) <= 1 or len(last_name) <= 1:
+            return {
+                "email": None,
+                "confidence_score": 50,
+                "verification_method": "Incomplete Profile (Initial Only)",
+                "mail_provider": "Directory Guarded",
+                "is_enterprise_locked": True,
+                "pipeline_type": "ENTERPRISE_LOCKED",
                 "mx_host": None
             }
 
@@ -431,7 +468,7 @@ class EmailVerifierService:
             }
 
         primary_mx = mx_hosts[0]
-        is_enterprise = self.is_mega_enterprise(clean_d, headcount, provider)
+        is_enterprise = self.is_mega_enterprise(clean_d, headcount, provider, company_name=company_name)
 
         candidates = self.brain.get_ranked_candidates(first_name, last_name, clean_d, middle_initial=middle_initial, provider=provider, role=role)
         if not candidates:

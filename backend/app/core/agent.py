@@ -217,6 +217,11 @@ class LeadFinderAgent:
                 except Exception:
                     pass
 
+            generic_companies = {"private enterprise", "stealth", "self-employed", "freelance", "stealth startup", "confidential"}
+            is_generic_company = not company or company.lower().strip() in generic_companies
+            if is_generic_company or domain in ["privateenterprise.com", "company.com", "unknown.com", "stealth.com"]:
+                is_generic_company = True
+
             # Run Dual Pipeline Verification
             ver_res = await self.verifier.verify_lead_email(
                 first_name=first_name,
@@ -224,12 +229,20 @@ class LeadFinderAgent:
                 domain=domain,
                 middle_initial=middle_initial,
                 headcount=headcount,
-                role=headline
+                role=headline,
+                company_name=company
             )
 
-            is_enterprise = ver_res.get("is_enterprise_locked", False)
-            pipeline = ver_res.get("pipeline_type", "FREE_UNLOCKED")
+            is_enterprise = bool(ver_res.get("is_enterprise_locked") or is_generic_company)
+            pipeline = "ENTERPRISE_LOCKED" if is_enterprise else ver_res.get("pipeline_type", "FREE_UNLOCKED")
             provider = ver_res.get("mail_provider", "Custom")
+
+            # Check if email is invalid or 2-letter username
+            raw_email = ver_res.get("email")
+            if raw_email and len(raw_email.split("@")[0]) <= 2:
+                is_enterprise = True
+                pipeline = "ENTERPRISE_LOCKED"
+                raw_email = None
 
             # Determine display location
             display_location = location
@@ -238,7 +251,7 @@ class LeadFinderAgent:
             elif not display_location and target_location:
                 display_location = target_location
 
-            if is_enterprise:
+            if is_enterprise or not raw_email or is_generic_company:
                 lead = Lead(
                     id=str(uuid.uuid4()),
                     name=name,
@@ -251,7 +264,7 @@ class LeadFinderAgent:
                     email_status=None,
                     phone=org_meta.get("phone"),
                     confidence_score=65,
-                    verification_method=f"Enterprise Guarded ({provider})",
+                    verification_method=f"Enterprise Guarded ({company if is_enterprise else 'Apollo Reveal'})",
                     mail_provider=provider,
                     mx_host=ver_res.get("mx_host"),
                     is_enterprise_locked=True,
@@ -259,7 +272,7 @@ class LeadFinderAgent:
                     status=LeadStatus.FOUND,
                     apollo_unlocked=False,
                     source="Apollo Guarded",
-                    meta={**org_meta, "candidate_email_preview": ver_res.get("email")}
+                    meta={**org_meta, "candidate_email_preview": raw_email}
                 )
                 verified_leads.append(lead)
                 exclude_urls.add(linkedin_url)
@@ -268,7 +281,7 @@ class LeadFinderAgent:
                 })
                 yield await emit("lead_discovered", lead.model_dump())
             else:
-                email = ver_res.get("email")
+                email = raw_email
                 confidence = ver_res.get("confidence_score", 88)
                 method = ver_res.get("verification_method", "100% Free Verified ($0)")
 

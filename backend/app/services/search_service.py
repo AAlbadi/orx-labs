@@ -529,8 +529,12 @@ class SearchService:
             if not seg or len(seg) < 3:
                 continue
             
-            # Split only on separators with whitespace to preserve hyphenated last names (e.g. Ramos-Ruiz)
-            parts = [p.strip() for p in re.split(r'\s+[\-–—\|·•]\s+|\s*\|\s*', seg) if p.strip()]
+            # Split only on primary separators with whitespace to isolate the main [Name] - [Title/Company] block
+            # Secondary pipe tags (e.g. '| AI for Civic Life | Ex-New York Fed') must NOT be parsed as company names
+            pipe_blocks = [p.strip() for p in seg.split('|') if p.strip()]
+            main_block = pipe_blocks[0] if pipe_blocks else seg
+
+            parts = [p.strip() for p in re.split(r'\s+[\-–—·•]\s+', main_block) if p.strip()]
             if not parts:
                 continue
                 
@@ -545,7 +549,10 @@ class SearchService:
                 continue
                 
             raw_role = parts[1] if len(parts) > 1 else "Executive"
+            role = raw_role
             company = ""
+
+            # Check for ' at ' or ' @ '
             if " at " in raw_role:
                 h_parts = raw_role.split(" at ")
                 role = h_parts[0].strip()
@@ -554,37 +561,37 @@ class SearchService:
                 h_parts = raw_role.split(" @ ")
                 role = h_parts[0].strip()
                 company = h_parts[-1].strip()
-            elif len(parts) > 2:
-                role = raw_role
-                company = parts[2]
-            else:
-                role = raw_role
-                company = ""
-
-            # Check [Company], Founder pattern
-            if ',' in raw_role and any(w in raw_role.lower() for w in ['founder', 'ceo', 'president']):
+            elif " of " in raw_role and any(w in raw_role.lower() for w in ['founder', 'ceo', 'president', 'director', 'head', 'partner', 'co-founder', 'cofounder']):
+                h_parts = raw_role.split(" of ")
+                role = h_parts[0].strip()
+                company = h_parts[-1].strip()
+            elif ',' in raw_role and any(w in raw_role.lower() for w in ['founder', 'ceo', 'president', 'partner', 'managing partner', 'director']):
                 r_parts = [p.strip() for p in raw_role.split(',') if p.strip()]
                 if len(r_parts) >= 2:
-                    if any(w in r_parts[1].lower() for w in ['founder', 'ceo', 'president']):
+                    if any(w in r_parts[1].lower() for w in ['founder', 'ceo', 'president', 'partner', 'director']):
                         company = r_parts[0]
                         role = r_parts[1]
                     else:
                         role = r_parts[0]
                         company = r_parts[1]
-                
+            elif len(parts) > 2:
+                role = raw_role
+                company = parts[2]
+
+            # If company is not found in title, check snippet for 'at [Company]'
             if not company and snippet:
                 at_match = re.search(r'\b(?:at|@)\s+([A-Z][A-Za-z0-9\s\.\,\&-]{2,30}?)(?:\s*[\·\•\|\.]|\s+in|\s+Location|\s+since|$)', snippet)
                 if at_match:
                     company = at_match.group(1).strip()
                     
-            prefix_pattern = r'^(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP|SWE|Engineer)\s*(?:&|and|/)?\s*(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP)?\s+(?:of|at|@)\s+'
+            prefix_pattern = r'^(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP|SWE|Engineer|Managing Partner)\s*(?:&|and|/)?\s*(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP)?\s+(?:of|at|@)\s+'
             company = re.sub(prefix_pattern, '', company, flags=re.IGNORECASE).strip()
             company = re.sub(r'\(.*?\)', '', company).strip()
             company = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', company, flags=re.IGNORECASE).strip()
             company = re.sub(r'(?i)\b(?:y\s+combinator|yc|techstars|500\s+startups|500\s+global|w\d{2}|s\d{2}|p\d{2}|x\d{2})\b', '', company).strip()
             company = re.sub(r'[\(\)\[\]\|·•,].*$', '', company).strip()
 
-            # Reject geographic names as company
+            # Reject geographic names and skills as company
             geo_names = {'new york', 'san francisco', 'manhattan', 'london', 'united states', 'california', 'texas', 'florida', 'united kingdom', 'brooklyn', 'queens', 'ny', 'sf', 'la'}
             if company.lower() in geo_names or re.match(r'^(?:new york|san francisco|london|california)', company.lower()):
                 company = ""

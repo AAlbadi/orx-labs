@@ -89,7 +89,7 @@ class LlmQueryService:
         for model in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
             try:
-                async with httpx.AsyncClient(timeout=8.0) as client:
+                async with httpx.AsyncClient(timeout=8.0, http2=False) as client:
                     res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
                     if res.status_code == 200:
                         data = res.json()
@@ -113,15 +113,15 @@ class LlmQueryService:
             "The input is a list of LinkedIn search results (some results contain MULTIPLE professionals combined). "
             "Extract EVERY unique professional mentioned into a flat JSON array.\n"
             "For each professional, dynamically decide their CURRENT active employment and corporate domain:\n"
-            "1. 'company': The CURRENT / ACTIVE corporate employer where they currently work TODAY (e.g. 'Akeneo', 'Centene Corporation', 'Coinrule', 'LavenirAI', 'Mott MacDonald').\n"
-            "   - In LinkedIn headlines ('[Name] - [Title] at [Company] | LinkedIn'), the phrase after 'at ' or '@ ' is ALWAYS their CURRENT company.\n"
+            "1. 'company': The CURRENT / ACTIVE corporate employer where they currently work TODAY (e.g. 'Bombas', 'OpenRouter', 'Maximum New York', 'New York Road Runners', 'Coinrule', 'Akeneo').\n"
+            "   - In LinkedIn headlines ('[Name] - [Title] at [Company] | LinkedIn'), the phrase after 'at ' or '@ ' or 'of ' is their CURRENT company.\n"
             "   - In snippets with 'Experience: [Role] · [Company] · [Dates/Present]', the FIRST listed company (or the one with 'Present') is their CURRENT company.\n"
             "   - NEVER extract past/former companies (e.g. ignore companies preceded by 'Ex-', 'Former', 'Past', 'Previously at').\n"
+            "   - NEVER output cities, states, or locations (e.g. NEVER output 'New York', 'San Francisco', 'Manhattan', 'California', 'London') as company names.\n"
             "   - Strip accelerator tags (e.g. 'YC W24', 'Y Combinator', 'Techstars') from company name to keep the true startup name.\n"
-            "   - NEVER use bio taglines, skills, or industries (e.g. NEVER output 'Strategist', 'Consultant', 'Leader').\n"
-            "2. 'name': Clean human full name ONLY (e.g. 'Sarah Assous', 'Gabriele Musella', 'Derek Larson').\n"
-            "3. 'headline': Current professional job title (e.g. 'CEO & Co-Founder', 'VP of Sales', 'Chief Marketing Officer').\n"
-            "4. 'domain': Predicted official corporate domain (e.g. 'coinrule.com', 'akeneo.com', 'lavenirai.com', 'striga.com'), else null.\n"
+            "2. 'name': Clean human full name ONLY (e.g. 'David Heath', 'Alex Atallah', 'Daniel Golliher').\n"
+            "3. 'headline': Current professional job title (e.g. 'Founder & CEO', 'Cofounder & CEO', 'President').\n"
+            "4. 'domain': Predicted official corporate domain (e.g. 'bombas.com', 'openrouter.ai', 'maximumnewyork.com', 'nyrr.org', 'coinrule.com'), else null.\n"
             "5. 'seniority': Dynamic seniority level ('Founder', 'C-Level', 'VP', 'Director', 'Manager', 'Lead').\n"
             "6. 'location': City and country.\n"
             "7. 'linkedin_url': Retain URL.\n"
@@ -140,7 +140,7 @@ class LlmQueryService:
             for model in models:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=3.0) as client:
+                    async with httpx.AsyncClient(timeout=4.0, http2=False) as client:
                         res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
                         if res.status_code == 200:
                             parsed = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])

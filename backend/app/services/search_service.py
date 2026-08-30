@@ -529,7 +529,8 @@ class SearchService:
             if not seg or len(seg) < 3:
                 continue
             
-            parts = [p.strip() for p in re.split(r'\s*[\-–—\|·•]\s*', seg) if p.strip()]
+            # Split only on separators with whitespace to preserve hyphenated last names (e.g. Ramos-Ruiz)
+            parts = [p.strip() for p in re.split(r'\s+[\-–—\|·•]\s+|\s*\|\s*', seg) if p.strip()]
             if not parts:
                 continue
                 
@@ -543,39 +544,56 @@ class SearchService:
             if name_words[0].lower() in JOB_WORDS_SINGLE:
                 continue
                 
-            role = parts[1] if len(parts) > 1 else "Executive"
+            raw_role = parts[1] if len(parts) > 1 else "Executive"
             company = ""
-            if " at " in role:
-                h_parts = role.split(" at ")
+            if " at " in raw_role:
+                h_parts = raw_role.split(" at ")
                 role = h_parts[0].strip()
                 company = h_parts[-1].strip()
-            elif " @ " in role:
-                h_parts = role.split(" @ ")
+            elif " @ " in raw_role:
+                h_parts = raw_role.split(" @ ")
                 role = h_parts[0].strip()
                 company = h_parts[-1].strip()
             elif len(parts) > 2:
+                role = raw_role
                 company = parts[2]
             else:
-                # If only 1 part after name (e.g. 'Mundo AI (YC W25)')
-                company = role
-                role = "Founder & CEO"
+                role = raw_role
+                company = ""
+
+            # Check [Company], Founder pattern
+            if ',' in raw_role and any(w in raw_role.lower() for w in ['founder', 'ceo', 'president']):
+                r_parts = [p.strip() for p in raw_role.split(',') if p.strip()]
+                if len(r_parts) >= 2:
+                    if any(w in r_parts[1].lower() for w in ['founder', 'ceo', 'president']):
+                        company = r_parts[0]
+                        role = r_parts[1]
+                    else:
+                        role = r_parts[0]
+                        company = r_parts[1]
                 
             if not company and snippet:
                 at_match = re.search(r'\b(?:at|@)\s+([A-Z][A-Za-z0-9\s\.\,\&-]{2,30}?)(?:\s*[\·\•\|\.]|\s+in|\s+Location|\s+since|$)', snippet)
                 if at_match:
                     company = at_match.group(1).strip()
                     
+            prefix_pattern = r'^(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP|SWE|Engineer)\s*(?:&|and|/)?\s*(?:Cofounder|Co-Founder|Founder|CEO|President|Director|Head|VP)?\s+(?:of|at|@)\s+'
+            company = re.sub(prefix_pattern, '', company, flags=re.IGNORECASE).strip()
             company = re.sub(r'\(.*?\)', '', company).strip()
             company = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', company, flags=re.IGNORECASE).strip()
             company = re.sub(r'(?i)\b(?:y\s+combinator|yc|techstars|500\s+startups|500\s+global|w\d{2}|s\d{2}|p\d{2}|x\d{2})\b', '', company).strip()
-            company = re.sub(r'^(?:Founder|Co-Founder|CEO|President)\s+(?:at|@)\s+', '', company, flags=re.IGNORECASE).strip()
             company = re.sub(r'[\(\)\[\]\|·•,].*$', '', company).strip()
-            
+
+            # Reject geographic names as company
+            geo_names = {'new york', 'san francisco', 'manhattan', 'london', 'united states', 'california', 'texas', 'florida', 'united kingdom', 'brooklyn', 'queens', 'ny', 'sf', 'la'}
+            if company.lower() in geo_names or re.match(r'^(?:new york|san francisco|london|california)', company.lower()):
+                company = ""
+
             role = re.sub(r'\(.*?\)', '', role).strip()
             role = re.sub(r'[\(\)\[\]\|·•].*$', '', role).strip()
             role = re.sub(r'(?i)\b(?:y\s+combinator|yc)\b', '', role).strip()
             if not role or role.lower() in ['co', 'ceo / co', 'founder / co', 'co-founder / co']:
-                role = "CEO & Co-Founder"
+                role = "Founder & CEO"
             
             slug = re.sub(r'[^a-zA-Z0-9]', '-', name.lower())
             cand_url = base_url if len(results) == 0 else f"https://www.linkedin.com/in/{slug}/"

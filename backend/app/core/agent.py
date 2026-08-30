@@ -228,8 +228,29 @@ class LeadFinderAgent:
                     "tech staffing solutions", "tech staffing", "consulting", "leadership", "management",
                     "leader", "specialist", "advisor", "private enterprise", "undisclosed", "experiential"
                 ]
-                if is_bio_company or not company:
+                geo_names = {'new york', 'san francisco', 'manhattan', 'london', 'united states', 'california', 'texas', 'florida', 'united kingdom', 'brooklyn', 'queens', 'ny', 'sf', 'la'}
+                if is_bio_company or not company or company.lower() in geo_names:
                     company = ""
+
+                # If company is missing, execute quick OSINT company search
+                if not company and name and name != "Executive":
+                    try:
+                        loop = asyncio.get_event_loop()
+                        def _find_company_osint():
+                            with DDGS(timeout=1.5) as ddgs:
+                                return list(ddgs.text(f'"{name}" CEO founder current company linkedin', max_results=2))
+                        osint_hits = await loop.run_in_executor(None, _find_company_osint)
+                        for oh in osint_hits:
+                            body = oh.get("body", "")
+                            m = re.search(r'\b(?:Co-Founder|Founder|CEO|President|Chief Executive Officer)\s+(?:and\s+CEO\s+)?(?:of|at|@)\s+([A-Z][A-Za-z0-9\s\.\,\&-]{2,30}?)(?:\s*[\,\.\·\•\|\n]|\s+a\s+|\s+in|\s+Location|\s+since|$)', body, re.IGNORECASE)
+                            if m:
+                                cand_c = m.group(1).strip()
+                                cand_c = re.sub(r'[\(\)\[\]\|·•,].*$', '', cand_c).strip()
+                                if cand_c.lower() not in geo_names and not self.search_service.is_fake_company(cand_c):
+                                    company = cand_c
+                                    break
+                    except Exception:
+                        pass
 
                 first_name, middle_initial, last_name = self.verifier.extract_name_and_slug_middle(name, linkedin_url)
                 if not first_name:

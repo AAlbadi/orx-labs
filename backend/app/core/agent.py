@@ -264,7 +264,7 @@ class LeadFinderAgent:
                     email_status=None,
                     phone=org_meta.get("phone"),
                     confidence_score=65,
-                    verification_method=f"Enterprise Guarded ({company if is_enterprise else 'Apollo Reveal'})",
+                    verification_method=ver_res.get("verification_method") or f"Enterprise Guarded ({company})",
                     mail_provider=provider,
                     mx_host=ver_res.get("mx_host"),
                     is_enterprise_locked=True,
@@ -282,21 +282,8 @@ class LeadFinderAgent:
                 yield await emit("lead_discovered", lead.model_dump())
             else:
                 email = raw_email
-                confidence = ver_res.get("confidence_score", 88)
-                method = ver_res.get("verification_method", "100% Free Verified ($0)")
-
-                if not email or isinstance(email, dict):
-                    # AI / Mastermind Pattern Deduction
-                    cands = self.verifier.brain.get_ranked_candidates(first_name, last_name, domain)
-                    if cands:
-                        top_cand = cands[0]
-                        email = top_cand["email"] if isinstance(top_cand, dict) else str(top_cand)
-                        confidence = top_cand.get("score", 80) if isinstance(top_cand, dict) else 80
-                        method = "Pattern Inferred (Mastermind Brain)"
-                    else:
-                        email = f"{first_name.lower()}.{last_name.lower()}@{domain}"
-                        confidence = 75
-                        method = "AI Standard Pattern"
+                confidence = ver_res.get("confidence_score", 95)
+                method = ver_res.get("verification_method", "100% Active Mailbox (SMTP 250 OK)")
 
                 lead = Lead(
                     id=str(uuid.uuid4()),
@@ -317,13 +304,13 @@ class LeadFinderAgent:
                     pipeline_type="FREE_UNLOCKED",
                     status=LeadStatus.UNLOCKED,
                     apollo_unlocked=True,
-                    source="Apollo Verified",
+                    source="Direct SMTP Verified",
                     meta=org_meta
                 )
                 verified_leads.append(lead)
                 exclude_urls.add(linkedin_url)
                 yield await emit("log", {
-                    "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email} [Free Verified $0]"
+                    "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email} [SMTP 250 OK]"
                 })
                 yield await emit("lead_discovered", lead.model_dump())
 

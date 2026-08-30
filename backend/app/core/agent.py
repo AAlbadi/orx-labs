@@ -41,29 +41,31 @@ class LeadFinderAgent:
         if clean_slug in self._domain_cache:
             return self._domain_cache[clean_slug]
 
-        # Fast slug variations
+        # Fast base slug (strip legal entities LP, LLC, Inc, Corp, etc.)
         clean_name_base = re.sub(
-            r'(?i)\b(?:inc|llc|ltd|limited|corp|corporation|group|holdings|co|company|partners|ventures|capital|technologies|tech|solutions|services|management|global|international)\b\.?',
+            r'(?i)\b(?:inc|llc|ltd|limited|corp|corporation|group|holdings|co|company|partners|ventures|capital|technologies|tech|solutions|services|management|global|international|lp|l\.p\.)\b\.?',
             '',
             clean_name
         ).strip()
         base_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_name_base.lower()) if clean_name_base else ""
 
-        slugs = [clean_slug]
-        if base_slug and base_slug != clean_slug:
+        slugs = []
+        if base_slug:
             slugs.append(base_slug)
+        if clean_slug and clean_slug != base_slug:
+            slugs.append(clean_slug)
 
         # Candidate TLD extensions to test quickly
         candidate_domains = []
         for s in slugs:
             candidate_domains.extend([
                 f"{s}.com",
-                f"{s}.ca",
+                f"{s}.co",
                 f"{s}.io",
                 f"{s}.ai",
-                f"{s}.co",
                 f"{s}.co.uk",
-                f"{s}.org"
+                f"{s}.org",
+                f"{s}.ca"
             ])
 
         for dom in candidate_domains:
@@ -72,7 +74,7 @@ class LeadFinderAgent:
                 self._domain_cache[clean_slug] = dom
                 return dom
 
-        dom = f"{clean_slug}.com"
+        dom = f"{slugs[0] if slugs else clean_slug}.com"
         self._domain_cache[clean_slug] = dom
         return dom
 

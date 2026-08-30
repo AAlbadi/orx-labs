@@ -369,6 +369,7 @@ class EmailVerifierService:
 
         try:
             resolver = dns.resolver.Resolver()
+            resolver.nameservers = ['8.8.8.8', '1.1.1.1', '8.8.4.4', '1.0.0.1']
             resolver.lifetime = 1.2
             resolver.timeout = 1.0
             answers = resolver.resolve(clean_d, 'MX')

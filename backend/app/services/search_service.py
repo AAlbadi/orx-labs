@@ -281,20 +281,26 @@ class SearchService:
         if not target_location:
             return True
 
-        target_terms = [t.lower() for t in LOCATION_REGION_MAP.get(target_location, [target_location.lower()])]
-        cand_loc_lower = candidate_location.lower().strip()
-        cand_snip_lower = candidate_snippet.lower().strip()
+        target_clean = target_location.lower().strip()
+        canon_loc = LOCATION_MAP.get(target_clean, target_location)
+        target_terms = set(LOCATION_REGION_MAP.get(canon_loc, []))
+        target_terms.add(canon_loc.lower())
+        target_terms.add(target_clean)
 
-        # If location is explicitly specified on the profile:
-        if cand_loc_lower:
-            return any(term in cand_loc_lower for term in target_terms)
+        cand_loc_lower = (candidate_location or "").lower().strip()
+        cand_snip_lower = (candidate_snippet or "").lower().strip()
 
-        # If location is in snippet:
-        if any(term in cand_snip_lower for term in target_terms):
-            return True
+        for term in target_terms:
+            if not term:
+                continue
+            if len(term) <= 3:
+                if re.search(rf'\b{re.escape(term)}\b', cand_loc_lower) or re.search(rf'\b{re.escape(term)}\b', cand_snip_lower):
+                    return True
+            else:
+                if term in cand_loc_lower or term in cand_snip_lower:
+                    return True
 
-        # Default to True since search dork already scoped the region
-        return True
+        return False
 
     def extract_search_parameters(self, prompt: str) -> Dict[str, Any]:
         clean = prompt.strip()

@@ -453,7 +453,7 @@ class SearchService:
             items = []
             for backend_name in ["lite", "html", "api"]:
                 try:
-                    with DDGS() as ddgs:
+                    with DDGS(timeout=4) as ddgs:
                         fetch_count = min(max(max_results * 2, 20), 40)
                         res = list(ddgs.text(dork_str, max_results=fetch_count, backend=backend_name))
                         if not res:
@@ -461,19 +461,13 @@ class SearchService:
                         for r in res:
                             url = r.get("href", "")
                             clean_url = self._clean_linkedin_url(url)
-                            if clean_url and clean_url not in seen_urls:
+                            if clean_url:
                                 title = r.get("title", "")
                                 body = r.get("body", "")
-                                parsed = self._parse_linkedin_title(title, body)
-
-                                # Location check
-                                if target_location and not self.is_location_match(parsed["location"], body, target_location):
-                                    continue
-
-                                parsed["linkedin_url"] = clean_url
-                                parsed["title"] = title
-                                parsed["snippet"] = body
-                                items.append(parsed)
+                                unpacked = self.unpack_search_item(title, body, clean_url, target_location)
+                                for p in unpacked:
+                                    if p["linkedin_url"] not in seen_urls:
+                                        items.append(p)
                         if items:
                             break
                 except Exception:
@@ -497,6 +491,66 @@ class SearchService:
             await asyncio.sleep(0.1)
 
         return all_results[:max_results]
+
+    def unpack_search_item(self, title: str, snippet: str, base_url: str, target_location: Optional[str] = None) -> List[Dict[str, Any]]:
+        raw_clean = re.sub(r'https?://\S+', '', title)
+        segments = re.split(r'\s*\.{2,}\s*|\s*\|\s*LinkedIn\s*', raw_clean)
+        
+        results = []
+        for seg in segments:
+            seg = seg.strip()
+            if not seg or len(seg) < 3:
+                continue
+            
+            parts = [p.strip() for p in re.split(r'\s*[\-–—\|·•]\s*', seg) if p.strip()]
+            if not parts:
+                continue
+                
+            raw_name = parts[0]
+            raw_name = re.sub(r'^\s*\(\d+\)\s*', '', raw_name)
+            name = re.sub(r'[^\w\s\.\,\'-]', '', raw_name).strip()
+            
+            name_words = name.split()
+            if len(name_words) < 2 or len(name) < 4 or len(name) > 40:
+                continue
+            if name_words[0].lower() in JOB_WORDS_SINGLE:
+                continue
+                
+            role = parts[1] if len(parts) > 1 else "Executive"
+            company = ""
+            if " at " in role:
+                h_parts = role.split(" at ")
+                role = h_parts[0].strip()
+                company = h_parts[-1].strip()
+            elif " @ " in role:
+                h_parts = role.split(" @ ")
+                role = h_parts[0].strip()
+                company = h_parts[-1].strip()
+            elif len(parts) > 2:
+                company = parts[2]
+                
+            if not company and snippet:
+                at_match = re.search(r'\b(?:at|@)\s+([A-Z][A-Za-z0-9\s\.\,\&-]{2,30}?)(?:\s*[\·\•\|\.]|\s+in|\s+Location|\s+since|$)', snippet)
+                if at_match:
+                    company = at_match.group(1).strip()
+                    
+            company = re.sub(r'\(.*?\)', '', company).strip()
+            company = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', company, flags=re.IGNORECASE).strip()
+            
+            slug = re.sub(r'[^a-zA-Z0-9]', '-', name.lower())
+            cand_url = base_url if len(results) == 0 else f"https://www.linkedin.com/in/{slug}/"
+            
+            results.append({
+                "name": name,
+                "headline": role or "Executive",
+                "company": company or "Private Enterprise",
+                "location": target_location or "Global",
+                "linkedin_url": cand_url,
+                "title": title,
+                "snippet": snippet
+            })
+            
+        return results
 
     def _clean_linkedin_url(self, raw_url: str) -> Optional[str]:
         if "linkedin.com/in/" not in raw_url:

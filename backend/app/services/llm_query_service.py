@@ -122,12 +122,14 @@ class LlmQueryService:
             for model in models:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 try:
-                    async with httpx.AsyncClient(timeout=15.0) as client:
+                    async with httpx.AsyncClient(timeout=3.0) as client:
                         res = await client.post(url, json=payload, headers={"Content-Type": "application/json"})
                         if res.status_code == 200:
                             parsed = json.loads(res.json()["candidates"][0]["content"]["parts"][0]["text"])
                             if isinstance(parsed, list):
                                 return parsed
+                        elif res.status_code in [429, 403, 404]:
+                            break
                 except Exception as e:
                     logger.warning(f"Gemini multi-extract chunk error ({model}): {e}")
             return chunk

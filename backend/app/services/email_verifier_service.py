@@ -4,8 +4,10 @@ import json
 import socket
 import smtplib
 import asyncio
+import urllib.request
 import dns.resolver
 from typing import Dict, Any, List, Optional, Tuple
+from ddgs import DDGS
 
 DISPOSABLE_DOMAINS = {
     "mailinator.com", "guerrillamail.com", "tempmail.com", "10minutemail.com",
@@ -272,7 +274,11 @@ class EmailVerifierService:
         return d.split("/")[0].split("?")[0].strip()
 
     def probe_public_company_emails(self, domain: str) -> List[str]:
-        """Probes web for public inboxes (support@, press@, employee emails) to verify domain and discover patterns."""
+        """
+        Multi-Layer Free Pattern Intelligence:
+        1. Web Footprint Search (DuckDuckGo OSINT)
+        2. GitHub Public Commits OSINT
+        """
         clean_d = self.clean_domain(domain)
         if not clean_d:
             return []
@@ -284,8 +290,10 @@ class EmailVerifierService:
             self._public_email_cache = {}
 
         emails: List[str] = []
+
+        # Layer 1: Autonomous Web Footprint Search
         try:
-            with DDGS() as ddgs:
+            with DDGS(timeout=3) as ddgs:
                 res = list(ddgs.text(f'site:{clean_d} "email" OR "contact" OR "@"', max_results=3))
                 for r in res:
                     text = f"{r.get('title', '')} {r.get('body', '')}"
@@ -294,8 +302,29 @@ class EmailVerifierService:
                         em = m.lower()
                         if em not in emails:
                             emails.append(em)
-                            # If it looks like an employee email, teach the Mastermind Brain!
                             pat = self._detect_pattern_from_sample(em, clean_d)
+                            if pat:
+                                self.brain.record_successful_pattern(clean_d, pat)
+        except Exception:
+            pass
+
+        # Layer 2: GitHub Public Commit Author OSINT
+        try:
+            req = urllib.request.Request(
+                f"https://api.github.com/search/commits?q=author-email:@{clean_d}&sort=committer-date&order=desc",
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept": "application/vnd.github.cloak-preview"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=2.0) as resp:
+                data = json.loads(resp.read().decode())
+                for item in data.get("items", [])[:5]:
+                    author_em = item.get("commit", {}).get("author", {}).get("email", "").lower().strip()
+                    if author_em.endswith(f"@{clean_d}") and "noreply" not in author_em and "bot" not in author_em:
+                        if author_em not in emails:
+                            emails.append(author_em)
+                            pat = self._detect_pattern_from_sample(author_em, clean_d)
                             if pat:
                                 self.brain.record_successful_pattern(clean_d, pat)
         except Exception:
@@ -506,10 +535,10 @@ class EmailVerifierService:
         winning_pattern_id = None
 
         if not is_catch_all:
-            for cand in candidates[:2]:
+            for cand in candidates[:4]:
                 cand_email = cand["email"]
                 is_valid, reason, code = await loop.run_in_executor(
-                    None, self._smtp_handshake_sync, cand_email, primary_mx, 2.0
+                    None, self._smtp_handshake_sync, cand_email, primary_mx, 1.5
                 )
                 if is_valid:
                     verified_email = cand_email

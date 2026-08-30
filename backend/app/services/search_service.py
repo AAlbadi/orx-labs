@@ -2,7 +2,7 @@ import re
 import os
 import urllib.parse
 import asyncio
-from typing import List, Dict, Any, Optional, Set
+from typing import List, Dict, Any, Optional, Set, Tuple
 import httpx
 from ddgs import DDGS
 

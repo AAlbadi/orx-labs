@@ -545,21 +545,21 @@ class EmailVerifierService:
                 "mx_host": primary_mx
             }
 
-        # Case 3: Mega-Enterprise with DBEB Block or Uncertainty -> Safe Enterprise Guard (Fallback)
-        if is_enterprise:
+        # Case 3: Mega-Enterprise or SMTP Rejected (550 Address Not Found) -> Guarded Mode
+        if is_enterprise or is_dbeb_blocked or not smtp_success:
             return {
-                "email": top_cand["email"],
-                "confidence_score": 65,
-                "verification_method": f"Enterprise Guarded ({provider})",
+                "email": None,
+                "confidence_score": 50,
+                "verification_method": f"Guarded ({'Mailbox Rejected 550' if is_dbeb_blocked else 'Apollo Reveal Required'})",
                 "mail_provider": provider,
                 "is_enterprise_locked": True,
                 "pipeline_type": "ENTERPRISE_LOCKED",
                 "mx_host": primary_mx
             }
 
-        # Case 4: Standard Startup / SMB -> Free Verified Pattern ($0.00)
+        # Case 4: Standard Verified Inbox
         return {
-            "email": top_cand["email"],
+            "email": verified_email or top_cand["email"],
             "confidence_score": 85,
             "verification_method": f"Free Verified Pattern ({provider})",
             "mail_provider": provider,

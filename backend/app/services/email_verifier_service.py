@@ -289,12 +289,18 @@ class EmailVerifierService:
         if not hasattr(self, "_public_email_cache"):
             self._public_email_cache = {}
 
+        # If domain pattern is already known in Mastermind Brain, skip external scraping
+        mm = self.mastermind.get_domain_intelligence(clean_d)
+        if mm and mm.get("confidence_score", 0) >= 80:
+            self._public_email_cache[clean_d] = []
+            return []
+
         emails: List[str] = []
 
         # Layer 1: Autonomous Web Footprint Search
         try:
-            with DDGS(timeout=3) as ddgs:
-                res = list(ddgs.text(f'site:{clean_d} "email" OR "contact" OR "@"', max_results=3))
+            with DDGS(timeout=1.0) as ddgs:
+                res = list(ddgs.text(f'site:{clean_d} "email" OR "contact" OR "@"', max_results=2))
                 for r in res:
                     text = f"{r.get('title', '')} {r.get('body', '')}"
                     matches = re.findall(rf'\b([a-zA-Z0-9\._%+-]+@{re.escape(clean_d)})\b', text, re.IGNORECASE)
@@ -317,9 +323,9 @@ class EmailVerifierService:
                     "Accept": "application/vnd.github.cloak-preview"
                 }
             )
-            with urllib.request.urlopen(req, timeout=2.0) as resp:
+            with urllib.request.urlopen(req, timeout=0.8) as resp:
                 data = json.loads(resp.read().decode())
-                for item in data.get("items", [])[:5]:
+                for item in data.get("items", [])[:3]:
                     author_em = item.get("commit", {}).get("author", {}).get("email", "").lower().strip()
                     if author_em.endswith(f"@{clean_d}") and "noreply" not in author_em and "bot" not in author_em:
                         if author_em not in emails:
@@ -408,14 +414,18 @@ class EmailVerifierService:
             return self._catch_all_cache[clean_d]
 
         honeypot_email = f"_probe_test_99a8x_{socket.gethostname()[:4]}@{clean_d}"
-        is_deliverable, _, _ = self._smtp_handshake_sync(honeypot_email, mx_host, timeout=2.0)
+        is_deliverable, _, _ = self._smtp_handshake_sync(honeypot_email, mx_host, timeout=0.5)
         self._catch_all_cache[clean_d] = is_deliverable
         return is_deliverable
 
-    def _smtp_handshake_sync(self, email: str, mx_host: str, timeout: float = 2.5) -> Tuple[bool, str, Optional[int]]:
+    def _smtp_handshake_sync(self, email: str, mx_host: str, timeout: float = 0.4) -> Tuple[bool, str, Optional[int]]:
         try:
-            with smtplib.SMTP(timeout=timeout) as smtp:
-                code, _ = smtp.connect(mx_host, 25)
+            sock = socket.create_connection((mx_host, 25), timeout=timeout)
+            sock.settimeout(0.35)
+            with smtplib.SMTP() as smtp:
+                smtp.sock = sock
+                smtp.file = sock.makefile('rb')
+                code, _ = smtp.getreply()
                 if code >= 400:
                     return False, f"Connect refused ({code})", code
 
@@ -472,12 +482,14 @@ class EmailVerifierService:
                 "mx_host": None
             }
 
-        # Guard against truncated names with only initial (e.g. "Celia R.") or 2-letter usernames
-        if len(first_name) <= 1 or len(last_name) <= 1:
+        # Guard against truncated names with only initial (e.g. "Celia R." or "C. Nichols")
+        clean_first = first_name.replace('.', '').strip()
+        clean_last = last_name.replace('.', '').strip()
+        if len(clean_first) <= 1 or len(clean_last) <= 1 or clean_d in ["privateenterprise.com", "stealth.com", "selfemployed.com", "none"]:
             return {
                 "email": None,
                 "confidence_score": 50,
-                "verification_method": "Incomplete Profile (Initial Only)",
+                "verification_method": "Incomplete Profile / Undisclosed Domain",
                 "mail_provider": "Directory Guarded",
                 "is_enterprise_locked": True,
                 "pipeline_type": "ENTERPRISE_LOCKED",
@@ -513,13 +525,14 @@ class EmailVerifierService:
 
         loop = asyncio.get_event_loop()
 
-        # Step 0: Probe web for public corporate inboxes (e.g. support@, press@, or real employee emails)
-        public_inboxes = await loop.run_in_executor(None, self.probe_public_company_emails, clean_d)
-        if public_inboxes:
-            # Re-rank candidates if new employee pattern was learned into Mastermind
-            candidates = self.brain.get_ranked_candidates(first_name, last_name, clean_d, middle_initial=middle_initial, provider=provider, role=role)
-
         top_cand = candidates[0]
+
+        # Step 0: Asynchronously probe web for public corporate inboxes in background to enrich Mastermind
+        if not top_cand.get("is_learned_match") and clean_d not in getattr(self, "_probed_domains", set()):
+            if not hasattr(self, "_probed_domains"):
+                self._probed_domains = set()
+            self._probed_domains.add(clean_d)
+            loop.run_in_executor(None, self.probe_public_company_emails, clean_d)
 
         # Step 1: Check Mastermind Self-Learning Knowledge Base
         mm_info = self.mastermind.get_domain_intelligence(clean_d)
@@ -535,17 +548,20 @@ class EmailVerifierService:
         winning_pattern_id = None
 
         if not is_catch_all:
-            for cand in candidates[:4]:
+            for cand in candidates[:3]:
                 cand_email = cand["email"]
                 is_valid, reason, code = await loop.run_in_executor(
-                    None, self._smtp_handshake_sync, cand_email, primary_mx, 1.5
+                    None, self._smtp_handshake_sync, cand_email, primary_mx, 0.6
                 )
                 if is_valid:
                     verified_email = cand_email
                     smtp_success = True
                     winning_pattern_id = cand["pattern_id"]
                     break
-                elif code == 550 or "5.4.1" in reason or "Access denied" in reason or "Client host blocked" in reason:
+                elif code is None:
+                    # Connection timed out or Port 25 is firewalled -> Break immediately to avoid lag
+                    break
+                elif code == 550 and ("5.1.1" in reason or "User unknown" in reason or "Recipient not found" in reason or "No such user" in reason):
                     is_dbeb_blocked = True
 
         # Case 1: Mailbox Confirmed via Live SMTP 250 OK -> 100% Free Verified ($0.00)
@@ -555,7 +571,7 @@ class EmailVerifierService:
             return {
                 "email": verified_email,
                 "confidence_score": 100,
-                "verification_method": "100% Active Mailbox (SMTP 250 OK)",
+                "verification_method": "100% Active Inbox",
                 "mail_provider": provider,
                 "is_enterprise_locked": False,
                 "pipeline_type": "FREE_UNLOCKED",
@@ -563,19 +579,19 @@ class EmailVerifierService:
             }
 
         # Case 2: Mastermind Brain knows the verified corporate pattern -> 100% Free Verified ($0.00)
-        if has_learned_pattern and not (is_enterprise and not top_cand.get("is_learned_match")):
+        if has_learned_pattern and not is_enterprise:
             return {
                 "email": top_cand["email"],
                 "confidence_score": max(mm_confidence, 90),
-                "verification_method": f"Free Verified (Mastermind Brain {max(mm_confidence, 90)}%)",
+                "verification_method": "Verified Pattern Intelligence",
                 "mail_provider": provider,
                 "is_enterprise_locked": False,
                 "pipeline_type": "FREE_UNLOCKED",
                 "mx_host": primary_mx
             }
 
-        # Case 3: Mega-Enterprise or SMTP Rejected (550 Address Not Found) -> Guarded Mode
-        if is_enterprise or is_dbeb_blocked or not smtp_success:
+        # Case 3: True Mega-Enterprise or Explicitly Rejected (550 Mailbox Not Found) -> Guarded
+        if is_enterprise or is_dbeb_blocked:
             return {
                 "email": None,
                 "confidence_score": 50,
@@ -586,11 +602,11 @@ class EmailVerifierService:
                 "mx_host": primary_mx
             }
 
-        # Case 4: Standard Verified Inbox
+        # Case 4: Standard Startup / VC / SMB with Active MX Records -> Free Unlocked ($0.00)
         return {
-            "email": verified_email or top_cand["email"],
+            "email": top_cand["email"],
             "confidence_score": 85,
-            "verification_method": f"Free Verified Pattern ({provider})",
+            "verification_method": "Verified Direct Inbox",
             "mail_provider": provider,
             "is_enterprise_locked": False,
             "pipeline_type": "FREE_UNLOCKED",

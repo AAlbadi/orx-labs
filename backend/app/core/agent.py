@@ -158,6 +158,8 @@ class LeadFinderAgent:
 
         for idx, c in enumerate(candidates, start=1):
             name = (c.get("name") or "Executive").strip()
+            name = re.sub(r'^(?i)linkedin\s*:?\s*', '', name).strip()
+
             headline = (c.get("headline") or "Executive").strip()
             company = (c.get("company") or "").strip()
             location = (c.get("location") or "").strip()
@@ -172,8 +174,15 @@ class LeadFinderAgent:
 
             if not location and target_location:
                 location = target_location
-            if not company:
-                company = "Private Enterprise"
+
+            # Strict validation: Reject bio taglines, skills, and industry terms parsed as companies
+            is_bio_company = self.search_service.is_fake_company(company) or company.lower() in [
+                "strategist", "sports & entertainment", "executive search", "private equity leader",
+                "tech staffing solutions", "tech staffing", "consulting", "leadership", "management",
+                "leader", "specialist", "advisor", "private enterprise", "undisclosed", "experiential"
+            ]
+            if is_bio_company or not company:
+                company = ""
 
             first_name, middle_initial, last_name = self.verifier.extract_name_and_slug_middle(name, linkedin_url)
             if not first_name:
@@ -182,17 +191,17 @@ class LeadFinderAgent:
                 last_name = re.sub(r'[^a-zA-Z0-9]', '', parts[-1].lower()) if len(parts) > 1 else ""
 
             domain = ""
-            if c.get("ai_domain"):
+            if company and c.get("ai_domain"):
                 ai_dom = self.verifier.clean_domain(c["ai_domain"])
                 mx_hosts, _ = self.verifier.get_mx_records(ai_dom)
                 if mx_hosts:
                     domain = ai_dom
 
-            if not domain:
+            if not domain and company:
                 domain = await self._resolve_company_domain(company)
-            if not domain:
-                clean_slug = re.sub(r'[^a-zA-Z0-9]', '', company.lower())
-                domain = f"{clean_slug}.com" if clean_slug else "company.com"
+
+            # If company or domain is missing/fake, mark as generic
+            is_generic_company = not company or not domain or domain in ["company.com", "privateenterprise.com", "none"]
 
             org_meta: Dict[str, Any] = {}
             headcount = 0

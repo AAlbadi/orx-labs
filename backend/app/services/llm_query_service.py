@@ -95,16 +95,16 @@ class LlmQueryService:
         if not api_key or not search_items:
             return search_items
 
-        models = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.5-flash"]
         system_instruction = (
             "You are an expert AI Lead Intelligence Engine. "
             "The input is a list of LinkedIn search results (some results contain MULTIPLE professionals combined). "
             "Extract EVERY unique professional mentioned into a flat JSON array.\n"
             "For each professional, output:\n"
-            "- 'name': Clean full name (no degrees, credentials, or emojis)\n"
-            "- 'headline': Real professional job title (e.g. 'HR Director', 'Head of People', 'VP of Sales'). Never use personal bio words like 'Father', 'Husband', 'Mother', 'Helping', 'Passionate', 'Results-driven'\n"
-            "- 'company': Full corporate company/employer name (expand acronyms e.g. OMG -> Omnicom Media Group). Never use location names like KSA/Dubai as company\n"
-            "- 'domain': Expected primary official corporate domain if confident (e.g. 'dubaiholding.com', 'dpworld.com', 'chalhoubgroup.com', 'bechtel.com'), else null\n"
+            "- 'name': Clean human full name ONLY (e.g. 'Sarah Assous', 'Ruth Duston', 'Rob Pope'). MUST NOT start with 'LinkedIn' or contain certifications like 'MBA', 'CFA', 'FCIPS'.\n"
+            "- 'headline': Real professional job title (e.g. 'Chief Marketing Officer', 'Digital Marketing Director', 'VP Strategic Development'). Never use personal bio words.\n"
+            "- 'company': Official corporate employer / company name ONLY (e.g. 'Akeneo', 'Centene Corporation', 'SEI Investments', 'DAZN Group', 'LavenirAI', 'Pax8', 'Mott MacDonald'). "
+            "CRITICAL: NEVER use bio descriptions, industries, or skills as company (e.g. NEVER output 'Strategist', 'Sports & Entertainment', 'Executive search', 'Private Equity', 'Tech Staffing', 'Consultant', 'Leader'). If employer is unknown, set company to null.\n"
+            "- 'domain': Expected primary official corporate domain if confident (e.g. 'akeneo.com', 'dazngroup.com', 'lavenirai.com', 'pax8.com'), else null.\n"
             "- 'location': City and country\n"
             "- 'linkedin_url': If card has a URL, retain it\n"
             "Output ONLY a valid JSON array."

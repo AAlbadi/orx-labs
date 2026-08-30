@@ -12,6 +12,7 @@ from app.services.search_service import SearchService
 from app.services.apollo_api_service import ApolloApiService
 from app.services.email_verifier_service import EmailVerifierService
 from app.services.llm_query_service import LlmQueryService
+from app.services.scrapegraph_service import ScrapeGraphService
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class LeadFinderAgent:
         self.apollo_api = ApolloApiService()
         self.verifier = EmailVerifierService()
         self.llm_query = LlmQueryService()
+        self.scrapegraph = ScrapeGraphService()
         self._domain_cache: Dict[str, str] = {}
         self._last_active_prompt: Optional[str] = None
         self._current_page: int = 1
@@ -291,6 +293,16 @@ class LeadFinderAgent:
                                 headcount = int(org.get("estimated_num_employees", 0) or 0)
                             except (ValueError, TypeError):
                                 headcount = 0
+                    except Exception:
+                        pass
+
+                if domain and not org_meta.get("company_industry"):
+                    try:
+                        scrape_data = await self.scrapegraph.scrape_company_leadership(domain, company, gemini_key)
+                        if scrape_data.get("industry"):
+                            org_meta["company_industry"] = scrape_data["industry"]
+                        if scrape_data.get("company_description"):
+                            org_meta["company_description"] = scrape_data["company_description"]
                     except Exception:
                         pass
 

@@ -251,82 +251,54 @@ class LeadFinderAgent:
             elif not display_location and target_location:
                 display_location = target_location
 
-            if is_enterprise or not raw_email or is_generic_company:
-                lead = Lead(
-                    id=str(uuid.uuid4()),
-                    name=name,
-                    headline=headline,
-                    role=headline or "Executive",
-                    company=company,
-                    location=display_location,
-                    linkedin_url=linkedin_url,
-                    email=None,
-                    email_status=None,
-                    phone=org_meta.get("phone"),
-                    confidence_score=65,
-                    verification_method=ver_res.get("verification_method") or f"Enterprise Guarded ({company})",
-                    mail_provider=provider,
-                    mx_host=ver_res.get("mx_host"),
-                    is_enterprise_locked=True,
-                    pipeline_type="ENTERPRISE_LOCKED",
-                    status=LeadStatus.FOUND,
-                    apollo_unlocked=False,
-                    source="Apollo Guarded",
-                    meta={**org_meta, "candidate_email_preview": raw_email}
-                )
-                verified_leads.append(lead)
-                exclude_urls.add(linkedin_url)
-                yield await emit("log", {
-                    "message": f"🔒 [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → Enterprise Guarded [Click 'Reveal via Apollo API']"
-                })
-                yield await emit("lead_discovered", lead.model_dump())
-            else:
-                email = raw_email
-                confidence = ver_res.get("confidence_score", 95)
-                method = ver_res.get("verification_method", "100% Active Mailbox (SMTP 250 OK)")
+            is_guarded_record = is_enterprise or not raw_email or is_generic_company
+            if is_guarded_record or not raw_email:
+                # Guarded records are hidden per user preference
+                continue
 
-                lead = Lead(
-                    id=str(uuid.uuid4()),
-                    name=name,
-                    headline=headline,
-                    role=headline or "Executive",
-                    company=company,
-                    location=display_location,
-                    linkedin_url=linkedin_url,
-                    email=email,
-                    email_status="verified",
-                    phone=org_meta.get("phone"),
-                    confidence_score=confidence,
-                    verification_method=method,
-                    mail_provider=provider,
-                    mx_host=ver_res.get("mx_host"),
-                    is_enterprise_locked=False,
-                    pipeline_type="FREE_UNLOCKED",
-                    status=LeadStatus.UNLOCKED,
-                    apollo_unlocked=True,
-                    source="Direct SMTP Verified",
-                    meta=org_meta
-                )
-                verified_leads.append(lead)
-                exclude_urls.add(linkedin_url)
-                yield await emit("log", {
-                    "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email} [SMTP 250 OK]"
-                })
-                yield await emit("lead_discovered", lead.model_dump())
+            email = raw_email
+            confidence = ver_res.get("confidence_score", 90)
+            method = ver_res.get("verification_method", "Verified Direct Inbox")
+
+            lead = Lead(
+                id=str(uuid.uuid4()),
+                name=name,
+                headline=headline,
+                role=headline or "Executive",
+                company=company,
+                location=display_location,
+                linkedin_url=linkedin_url,
+                email=email,
+                email_status="verified",
+                phone=org_meta.get("phone"),
+                confidence_score=confidence,
+                verification_method=method,
+                mail_provider=provider,
+                mx_host=ver_res.get("mx_host"),
+                is_enterprise_locked=False,
+                pipeline_type="FREE_UNLOCKED",
+                status=LeadStatus.UNLOCKED,
+                apollo_unlocked=True,
+                source="Verified Direct",
+                meta=org_meta
+            )
+            verified_leads.append(lead)
+            exclude_urls.add(linkedin_url)
+            yield await emit("log", {
+                "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email}"
+            })
+            yield await emit("lead_discovered", lead.model_dump())
 
             await asyncio.sleep(0.04)
 
             if len(verified_leads) >= target_limit:
                 break
 
-        free_count = sum(1 for l in verified_leads if l.pipeline_type == "FREE_UNLOCKED")
-        enterprise_count = sum(1 for l in verified_leads if l.pipeline_type == "ENTERPRISE_LOCKED")
-
         yield await emit("log", {
-            "message": f"Done — Sourced {len(verified_leads)} fresh leads on Page {page} ({free_count} Free Unlocked $0, {enterprise_count} Enterprise Guarded)"
+            "message": f"Done — Sourced {len(verified_leads)} verified prospects on Page {page}."
         })
         yield await emit("complete", {
-            "message": f"Sourced {len(verified_leads)} fresh leads (Page {page}) · {free_count} Free Unlocked ($0) · {enterprise_count} Enterprise Guarded",
+            "message": f"Sourced {len(verified_leads)} verified prospects on Page {page}.",
             "leads": [l.model_dump() for l in verified_leads],
             "page": page,
             "original_prompt": effective_prompt,

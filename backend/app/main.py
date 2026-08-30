@@ -57,7 +57,7 @@ async def get_status():
     gemini_key = os.getenv("GEMINI_API_KEY")
     return {
         "status": "online",
-        "version": "2.4.0-ultra-fast",
+        "version": "2.5.0-latest",
         "has_apollo_key": bool(api_key),
         "has_gemini_key": bool(gemini_key),
         "engine": "Dual-Pipeline Engine (100% Free SMB / On-Demand Apollo Enterprise Guard)",

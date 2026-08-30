@@ -555,6 +555,10 @@ class SearchService:
                 company = h_parts[-1].strip()
             elif len(parts) > 2:
                 company = parts[2]
+            else:
+                # If only 1 part after name (e.g. 'Mundo AI (YC W25)')
+                company = role
+                role = "Founder & CEO"
                 
             if not company and snippet:
                 at_match = re.search(r'\b(?:at|@)\s+([A-Z][A-Za-z0-9\s\.\,\&-]{2,30}?)(?:\s*[\·\•\|\.]|\s+in|\s+Location|\s+since|$)', snippet)
@@ -563,6 +567,15 @@ class SearchService:
                     
             company = re.sub(r'\(.*?\)', '', company).strip()
             company = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', company, flags=re.IGNORECASE).strip()
+            company = re.sub(r'(?i)\b(?:y\s+combinator|yc|techstars|500\s+startups|500\s+global|w\d{2}|s\d{2}|p\d{2}|x\d{2})\b', '', company).strip()
+            company = re.sub(r'^(?:Founder|Co-Founder|CEO|President)\s+(?:at|@)\s+', '', company, flags=re.IGNORECASE).strip()
+            company = re.sub(r'[\(\)\[\]\|·•,].*$', '', company).strip()
+            
+            role = re.sub(r'\(.*?\)', '', role).strip()
+            role = re.sub(r'[\(\)\[\]\|·•].*$', '', role).strip()
+            role = re.sub(r'(?i)\b(?:y\s+combinator|yc)\b', '', role).strip()
+            if not role or role.lower() in ['co', 'ceo / co', 'founder / co', 'co-founder / co']:
+                role = "CEO & Co-Founder"
             
             slug = re.sub(r'[^a-zA-Z0-9]', '-', name.lower())
             cand_url = base_url if len(results) == 0 else f"https://www.linkedin.com/in/{slug}/"

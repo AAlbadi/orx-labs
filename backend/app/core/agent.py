@@ -164,6 +164,7 @@ class LeadFinderAgent:
         })
 
         verified_leads: List[Lead] = []
+        seen_names: Set[str] = set()
         compiled_dork = self.search_service.compile_smart_dork(effective_prompt)
         target_location = ai_query.get("location") or compiled_dork.get("location")
 
@@ -197,6 +198,10 @@ class LeadFinderAgent:
                 name = (c.get("name") or "Executive").strip()
                 name = re.sub(r'^linkedin\s*:?\s*', '', name, flags=re.IGNORECASE).strip()
 
+                norm_name = re.sub(r'[^a-z0-9]', '', name.lower())
+                if not norm_name or norm_name in seen_names:
+                    continue
+
                 headline = (c.get("headline") or "Executive").strip()
                 company = (c.get("company") or "").strip()
                 location = (c.get("location") or "").strip()
@@ -211,6 +216,11 @@ class LeadFinderAgent:
 
                 if not location and target_location:
                     location = target_location
+
+                # If company is an accelerator name like 'Y Combinator' but they are a startup founder
+                if company.lower() in ['y combinator', 'yc', 'techstars', '500 startups', '500 global'] and any(w in headline.lower() for w in ['founder', 'ceo', 'co-founder']):
+                    # Look for startup name in snippet or title
+                    company = ""
 
                 # Strict validation: Reject bio taglines, skills, and industry terms parsed as companies
                 is_bio_company = self.search_service.is_fake_company(company) or company.lower() in [
@@ -228,8 +238,8 @@ class LeadFinderAgent:
                     last_name = re.sub(r'[^a-zA-Z0-9]', '', parts[-1].lower()) if len(parts) > 1 else ""
 
                 domain = ""
-                if company and c.get("ai_domain"):
-                    ai_dom = self.verifier.clean_domain(c["ai_domain"])
+                if company and c.get("domain"):
+                    ai_dom = self.verifier.clean_domain(c["domain"])
                     mx_hosts, _ = self.verifier.get_mx_records(ai_dom)
                     if mx_hosts:
                         domain = ai_dom
@@ -329,6 +339,7 @@ class LeadFinderAgent:
                     meta=org_meta
                 )
                 verified_leads.append(lead)
+                seen_names.add(norm_name)
                 exclude_urls.add(linkedin_url)
                 yield await emit("log", {
                     "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email}"

@@ -50,7 +50,7 @@ class LlmQueryService:
 
     async def _call_gemini_flash(self, prompt: str, api_key: str) -> Optional[Dict[str, Any]]:
         """Calls Google Gemini Cloud API endpoint with ultra-fast models."""
-        models = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-flash-latest"]
+        models = ["gemini-2.5-flash", "gemini-1.5-flash"]
         
         system_instruction = (
             "You are the master AI Lead Intelligence Architect. "

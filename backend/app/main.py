@@ -50,6 +50,7 @@ async def root():
         "health_check": "/api/status"
     }
 
+@app.get("/health")
 @app.get("/api/status")
 async def get_status():
     """System health check, Apollo API status, and LLM status."""

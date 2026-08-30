@@ -562,23 +562,78 @@ class SearchService:
                 return f"https://www.linkedin.com/in/{slug}/"
         return None
 
+    @staticmethod
+    def extract_chronological_experience(snippet: str) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Ultra-accurate Chronological Experience Parser.
+        Extracts the #1 most recent / current company and job title from LinkedIn search snippet blocks:
+        e.g. 'Experience: Marketing Director · Akeneo · 2021 - Present ...'
+        or 'Experience: Akeneo · 3 yrs · Location: London ...'
+        or 'Experience: CEO at LavenirAI ...'
+        """
+        if not snippet:
+            return None, None
+
+        exp_match = re.search(
+            r'(?:Experience|Ervaring|الخبرة|Expérience|Berufserfahrung|Experiencia|Experiência):\s*([^\n\r]+?)(?:\s+Education|\s+Opleiding|\s+التعليم|\s+Formation|\s+Ausbildung|\s+Educación|\s+Location:|\s+Locatie:|\s+الموقع:|$)',
+            snippet,
+            re.IGNORECASE
+        )
+        if not exp_match:
+            return None, None
+
+        raw_block = exp_match.group(1).strip()
+        segments = [s.strip() for s in re.split(r'\s*[\·\•\|\t]\s*', raw_block) if s.strip()]
+        if not segments:
+            return None, None
+
+        role = None
+        company = None
+
+        for seg in segments:
+            if re.search(r'^\d+\+?\s*(?:years?|yrs?|months?|mos?)\b', seg, re.IGNORECASE) or re.search(r'\b(?:19|20)\d{2}\s*[\-–]\s*(?:Present|\d{4})', seg, re.IGNORECASE) or seg.lower() in ["present", "current"]:
+                continue
+
+            clean_seg = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', seg, flags=re.IGNORECASE).strip()
+            clean_seg = re.sub(r'\(.*?\)', '', clean_seg).strip()
+
+            if " at " in clean_seg:
+                parts = clean_seg.split(" at ")
+                role = parts[0].strip()
+                company = parts[-1].strip()
+                break
+            elif " @ " in clean_seg:
+                parts = clean_seg.split(" @ ")
+                role = parts[0].strip()
+                company = parts[-1].strip()
+                break
+
+            if re.search(r'\b(?:CEO|CTO|CFO|CMO|CIO|COO|CPO|VP|Vice President|Director|Manager|Head|Lead|Founder|Partner|Owner|President|General Manager|Executive)\b', clean_seg, re.IGNORECASE):
+                if not role:
+                    role = clean_seg
+                continue
+            else:
+                if not company and len(clean_seg) >= 2 and not SearchService.is_fake_company(clean_seg):
+                    company = clean_seg
+                    break
+
+        return role, company
+
     def _parse_linkedin_title(self, title: str, snippet: str) -> Dict[str, str]:
         # 1. Isolate the FIRST profile from DuckDuckGo's concatenated title string
         t_clean = re.split(r'(?i)\s*(?:[\|\-–—]\s*LinkedIn|\b(?:view|bekijk)\b|https?://)', title)[0].strip()
         first_segment = t_clean.split(" ...")[0].strip()
         
-        # 2. Extract Experience (LinkedIn's standard current job field)
-        company = ""
+        # 2. Extract Experience using Chronological Experience Parser (Priority #1)
         role = ""
+        company = ""
         location = ""
 
-        # Priority 1: LinkedIn Snippet "Experience: [Current Company]"
-        exp_match = re.search(r'(?:Experience|Ervaring|الخبرة|Expérience|Berufserfahrung):\s*([^\·\•\|\n\r\t]+?)(?:\s*[\·\•\|\n\r\t]|\s+Education|\s+Location|\s+Opleiding|\s+Locatie|\s+التعليم|$)', snippet, re.IGNORECASE)
-        if exp_match:
-            cand_exp = exp_match.group(1).strip()
-            cand_exp = re.sub(r'^(?:Ex|Former|Previous)[\s\-\:]+', '', cand_exp, flags=re.IGNORECASE).strip()
-            if len(cand_exp) >= 2 and not any(cand_exp.lower().startswith(x) for x in ["http", "view", "--", "undefined"]):
-                company = cand_exp
+        exp_role, exp_company = self.extract_chronological_experience(snippet)
+        if exp_company:
+            company = exp_company
+        if exp_role:
+            role = exp_role
 
         # Priority 2: LinkedIn Snippet "Location: [City/Country]"
         loc_match = re.search(r'(?:Location|Locatie|الموقع|Emplacement|Standort):\s*([^\·\•\|\n\r\t]+?)(?:\s*[\·\•\|\n\r\t]|\s+\d+\+\s+connections|\s+View|\s+Bekijk|$)', snippet, re.IGNORECASE)
@@ -596,16 +651,19 @@ class SearchService:
             role_part = parts[1]
             if " at " in role_part:
                 sub = role_part.split(" at ")
-                role = sub[0].strip()
+                if not role:
+                    role = sub[0].strip()
                 if not company:
                     company = sub[-1].strip()
             elif " @ " in role_part:
                 sub = role_part.split(" @ ")
-                role = sub[0].strip()
+                if not role:
+                    role = sub[0].strip()
                 if not company:
                     company = sub[-1].strip()
             else:
-                role = role_part
+                if not role:
+                    role = role_part
 
         # Fallback to secondary title parts if company still empty
         if not company and len(parts) > 2:

@@ -41,10 +41,10 @@ class LeadFinderAgent:
     async def _resolve_company_domain(self, company_name: str) -> str:
         """
         Ultra-Smart 5-Layer Company Domain Discovery & Verification:
-        1. Fast In-Memory & Mastermind Brain Cache
-        2. Legal entity stripping & candidate slug heuristics
-        3. Real-time DNS MX record verification with Google/Cloudflare resolvers
-        4. DuckDuckGo OSINT Official Website discovery fallback
+        1. Memory / Mastermind Brain cache (0.0001s)
+        2. STEP 1 (First Step): Real-Time Web Search for Company's Official Public Domain
+        3. STEP 2: Legal entity stripping & candidate base slug heuristics (.com, .co, .io, .ai, .org)
+        4. STEP 3: Real-time DNS MX record verification with Google/Cloudflare resolvers (8.8.8.8, 1.1.1.1)
         5. Deep MX Provider validation (Google Workspace, Microsoft 365, Proofpoint, etc.)
         """
         clean_name = company_name.strip()
@@ -64,7 +64,26 @@ class LeadFinderAgent:
             self._domain_cache[clean_slug] = f"{clean_slug}.com"
             return f"{clean_slug}.com"
 
-        # 2. Fast base slug (strip legal entities LP, LLC, Inc, Corp, etc.)
+        # STEP 1 (FIRST STEP): Real-time Web Search for Company's Official Public Domain
+        try:
+            loop = asyncio.get_event_loop()
+            def _search_official():
+                with DDGS(timeout=1.5) as ddgs:
+                    return list(ddgs.text(f'"{clean_name}" official website', max_results=4))
+            res = await loop.run_in_executor(None, _search_official)
+            for r in res:
+                href = r.get('href') or ''
+                netloc = urllib.parse.urlparse(href).netloc.lower().replace('www.', '').strip()
+                dom = netloc.split(':')[0]
+                if dom and not any(ex in dom for ex in EXCLUDED_DIRECTORY_DOMAINS if ex != f"{clean_slug}.com"):
+                    mx_hosts, _ = self.verifier.get_mx_records(dom)
+                    if mx_hosts:
+                        self._domain_cache[clean_slug] = dom
+                        return dom
+        except Exception:
+            pass
+
+        # STEP 2 (FALLBACK): Fast base slug & morphological heuristics
         clean_name_base = re.sub(
             r'(?i)\b(?:inc|llc|ltd|limited|corp|corporation|group|holdings|co|company|partners|ventures|capital|technologies|tech|solutions|services|management|global|international|lp|l\.p\.)\b\.?',
             '',
@@ -78,11 +97,9 @@ class LeadFinderAgent:
         if clean_slug and clean_slug != base_slug:
             slugs.append(clean_slug)
 
-        # If company has 'AI' in name (e.g. LavenirAI)
         if clean_slug.endswith('ai') and len(clean_slug) > 3:
             slugs.append(clean_slug[:-2])
 
-        # Candidate TLD extensions to test quickly
         candidate_domains = []
         for s in slugs:
             candidate_domains.extend([
@@ -96,31 +113,11 @@ class LeadFinderAgent:
                 f"{s}.ca"
             ])
 
-        # Layer 3: Direct Fast DNS MX Verification
         for dom in candidate_domains:
             mx_hosts, _ = self.verifier.get_mx_records(dom)
             if mx_hosts:
                 self._domain_cache[clean_slug] = dom
                 return dom
-
-        # Layer 4: Real-time DuckDuckGo Official Website Search
-        try:
-            loop = asyncio.get_event_loop()
-            def _search_official():
-                with DDGS(timeout=1.5) as ddgs:
-                    return list(ddgs.text(f'"{clean_name}" official website', max_results=3))
-            res = await loop.run_in_executor(None, _search_official)
-            for r in res:
-                href = r.get('href') or ''
-                netloc = urllib.parse.urlparse(href).netloc.lower().replace('www.', '').strip()
-                dom = netloc.split(':')[0]
-                if dom and not any(ex in dom for ex in EXCLUDED_DIRECTORY_DOMAINS if ex != f"{clean_slug}.com"):
-                    mx_hosts, _ = self.verifier.get_mx_records(dom)
-                    if mx_hosts:
-                        self._domain_cache[clean_slug] = dom
-                        return dom
-        except Exception:
-            pass
 
         dom = f"{slugs[0] if slugs else clean_slug}.com"
         self._domain_cache[clean_slug] = dom

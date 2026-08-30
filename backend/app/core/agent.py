@@ -116,192 +116,184 @@ class LeadFinderAgent:
             "original_prompt": effective_prompt
         })
 
-        yield await emit("log", {
-            "message": f"Scanning web for new LinkedIn profiles (Page {page}, excluding {len(exclude_urls)} existing)..."
-        })
-
-        fetch_multiplier = 4
-        try:
-            candidates = await self.search_service.search_linkedin_profiles(
-                effective_prompt, 
-                max_results=target_limit * fetch_multiplier,
-                exclude_urls=exclude_urls,
-                page=page
-            )
-        except Exception as e:
-            logger.error(f"Search error: {e}")
-            candidates = []
-
-        if not candidates:
-            yield await emit("log", {"message": "No new matching profiles found on this page — try broadening your query."})
-            yield await emit("complete", {
-                "message": f"No additional new profiles found for \"{effective_prompt}\".",
-                "leads": [],
-                "page": page,
-                "can_load_more": False
-            })
-            return
-
-        yield await emit("log", {
-            "message": f"🧠 Google Gemini Flash AI: Unpacking multi-candidate search cards, extracting real current employers & corporate domains..."
-        })
-        candidates = await self.llm_query.batch_multi_extract_candidates(candidates, gemini_key)
-
-        yield await emit("log", {
-            "message": f"Classifying company scale & email infrastructure for {len(candidates)} discovered prospects..."
-        })
-
         verified_leads: List[Lead] = []
-
         compiled_dork = self.search_service.compile_smart_dork(effective_prompt)
         target_location = ai_query.get("location") or compiled_dork.get("location")
 
-        for idx, c in enumerate(candidates, start=1):
-            name = (c.get("name") or "Executive").strip()
-            name = re.sub(r'^(?i)linkedin\s*:?\s*', '', name).strip()
+        current_search_page = page
+        max_search_pages = page + 4
 
-            headline = (c.get("headline") or "Executive").strip()
-            company = (c.get("company") or "").strip()
-            location = (c.get("location") or "").strip()
-            linkedin_url = c.get("linkedin_url") or f"https://www.linkedin.com/in/{re.sub(r'[^a-zA-Z0-9]', '-', name.lower())}"
-
-            if linkedin_url in exclude_urls:
-                continue
-
-            # Strict Location Guard
-            if target_location and not self.search_service.is_location_match(location, headline, target_location):
-                continue
-
-            if not location and target_location:
-                location = target_location
-
-            # Strict validation: Reject bio taglines, skills, and industry terms parsed as companies
-            is_bio_company = self.search_service.is_fake_company(company) or company.lower() in [
-                "strategist", "sports & entertainment", "executive search", "private equity leader",
-                "tech staffing solutions", "tech staffing", "consulting", "leadership", "management",
-                "leader", "specialist", "advisor", "private enterprise", "undisclosed", "experiential"
-            ]
-            if is_bio_company or not company:
-                company = ""
-
-            first_name, middle_initial, last_name = self.verifier.extract_name_and_slug_middle(name, linkedin_url)
-            if not first_name:
-                parts = [p for p in name.split() if p]
-                first_name = re.sub(r'[^a-zA-Z0-9]', '', parts[0].lower()) if parts else "contact"
-                last_name = re.sub(r'[^a-zA-Z0-9]', '', parts[-1].lower()) if len(parts) > 1 else ""
-
-            domain = ""
-            if company and c.get("ai_domain"):
-                ai_dom = self.verifier.clean_domain(c["ai_domain"])
-                mx_hosts, _ = self.verifier.get_mx_records(ai_dom)
-                if mx_hosts:
-                    domain = ai_dom
-
-            if not domain and company:
-                domain = await self._resolve_company_domain(company)
-
-            # If company or domain is missing/fake, mark as generic
-            is_generic_company = not company or not domain or domain in ["company.com", "privateenterprise.com", "none"]
-
-            org_meta: Dict[str, Any] = {}
-            headcount = 0
-
-            if api_key:
-                try:
-                    org_res = await self.apollo_api.enrich_organization(domain, api_key)
-                    if org_res.get("success") and org_res.get("organization"):
-                        org = org_res["organization"]
-                        org_meta = {
-                            "company_industry": org.get("industry", ""),
-                            "company_size": org.get("estimated_num_employees", ""),
-                            "annual_revenue": org.get("annual_revenue_printed", ""),
-                            "phone": org.get("phone", ""),
-                            "domain": org.get("primary_domain", domain)
-                        }
-                        domain = org_meta.get("domain", domain)
-                        try:
-                            headcount = int(org.get("estimated_num_employees", 0) or 0)
-                        except (ValueError, TypeError):
-                            headcount = 0
-                except Exception:
-                    pass
-
-            generic_companies = {"private enterprise", "stealth", "self-employed", "freelance", "stealth startup", "confidential"}
-            is_generic_company = not company or company.lower().strip() in generic_companies
-            if is_generic_company or domain in ["privateenterprise.com", "company.com", "unknown.com", "stealth.com"]:
-                is_generic_company = True
-
-            # Run Dual Pipeline Verification
-            ver_res = await self.verifier.verify_lead_email(
-                first_name=first_name,
-                last_name=last_name,
-                domain=domain,
-                middle_initial=middle_initial,
-                headcount=headcount,
-                role=headline,
-                company_name=company
-            )
-
-            is_enterprise = bool(ver_res.get("is_enterprise_locked") or is_generic_company)
-            pipeline = "ENTERPRISE_LOCKED" if is_enterprise else ver_res.get("pipeline_type", "FREE_UNLOCKED")
-            provider = ver_res.get("mail_provider", "Custom")
-
-            # Check if email is invalid or 2-letter username
-            raw_email = ver_res.get("email")
-            if raw_email and len(raw_email.split("@")[0]) <= 2:
-                is_enterprise = True
-                pipeline = "ENTERPRISE_LOCKED"
-                raw_email = None
-
-            # Determine display location
-            display_location = location
-            if org_meta.get("city") and org_meta.get("country"):
-                display_location = f"{org_meta['city']}, {org_meta['country']}"
-            elif not display_location and target_location:
-                display_location = target_location
-
-            is_guarded_record = is_enterprise or not raw_email or is_generic_company
-            if is_guarded_record or not raw_email:
-                # Guarded records are hidden per user preference
-                continue
-
-            email = raw_email
-            confidence = ver_res.get("confidence_score", 90)
-            method = ver_res.get("verification_method", "Verified Direct Inbox")
-
-            lead = Lead(
-                id=str(uuid.uuid4()),
-                name=name,
-                headline=headline,
-                role=headline or "Executive",
-                company=company,
-                location=display_location,
-                linkedin_url=linkedin_url,
-                email=email,
-                email_status="verified",
-                phone=org_meta.get("phone"),
-                confidence_score=confidence,
-                verification_method=method,
-                mail_provider=provider,
-                mx_host=ver_res.get("mx_host"),
-                is_enterprise_locked=False,
-                pipeline_type="FREE_UNLOCKED",
-                status=LeadStatus.UNLOCKED,
-                apollo_unlocked=True,
-                source="Verified Direct",
-                meta=org_meta
-            )
-            verified_leads.append(lead)
-            exclude_urls.add(linkedin_url)
+        while len(verified_leads) < target_limit and current_search_page <= max_search_pages:
             yield await emit("log", {
-                "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email}"
+                "message": f"Scanning web for verified LinkedIn profiles (Page {current_search_page}, sourced {len(verified_leads)}/{target_limit})..."
             })
-            yield await emit("lead_discovered", lead.model_dump())
 
-            await asyncio.sleep(0.04)
+            fetch_multiplier = 4
+            try:
+                candidates = await self.search_service.search_linkedin_profiles(
+                    effective_prompt, 
+                    max_results=max((target_limit - len(verified_leads)) * fetch_multiplier, 20),
+                    exclude_urls=exclude_urls,
+                    page=current_search_page
+                )
+            except Exception as e:
+                logger.error(f"Search error on page {current_search_page}: {e}")
+                candidates = []
 
-            if len(verified_leads) >= target_limit:
-                break
+            if not candidates:
+                current_search_page += 1
+                continue
+
+            candidates = await self.llm_query.batch_multi_extract_candidates(candidates, gemini_key)
+
+            for idx, c in enumerate(candidates, start=1):
+                name = (c.get("name") or "Executive").strip()
+                name = re.sub(r'^linkedin\s*:?\s*', '', name, flags=re.IGNORECASE).strip()
+
+                headline = (c.get("headline") or "Executive").strip()
+                company = (c.get("company") or "").strip()
+                location = (c.get("location") or "").strip()
+                linkedin_url = c.get("linkedin_url") or f"https://www.linkedin.com/in/{re.sub(r'[^a-zA-Z0-9]', '-', name.lower())}"
+
+                if linkedin_url in exclude_urls:
+                    continue
+
+                # Strict Location Guard
+                if target_location and not self.search_service.is_location_match(location, headline, target_location):
+                    continue
+
+                if not location and target_location:
+                    location = target_location
+
+                # Strict validation: Reject bio taglines, skills, and industry terms parsed as companies
+                is_bio_company = self.search_service.is_fake_company(company) or company.lower() in [
+                    "strategist", "sports & entertainment", "executive search", "private equity leader",
+                    "tech staffing solutions", "tech staffing", "consulting", "leadership", "management",
+                    "leader", "specialist", "advisor", "private enterprise", "undisclosed", "experiential"
+                ]
+                if is_bio_company or not company:
+                    company = ""
+
+                first_name, middle_initial, last_name = self.verifier.extract_name_and_slug_middle(name, linkedin_url)
+                if not first_name:
+                    parts = [p for p in name.split() if p]
+                    first_name = re.sub(r'[^a-zA-Z0-9]', '', parts[0].lower()) if parts else "contact"
+                    last_name = re.sub(r'[^a-zA-Z0-9]', '', parts[-1].lower()) if len(parts) > 1 else ""
+
+                domain = ""
+                if company and c.get("ai_domain"):
+                    ai_dom = self.verifier.clean_domain(c["ai_domain"])
+                    mx_hosts, _ = self.verifier.get_mx_records(ai_dom)
+                    if mx_hosts:
+                        domain = ai_dom
+
+                if not domain and company:
+                    domain = await self._resolve_company_domain(company)
+
+                # If company or domain is missing/fake, mark as generic
+                is_generic_company = not company or not domain or domain in ["company.com", "privateenterprise.com", "none"]
+
+                org_meta: Dict[str, Any] = {}
+                headcount = 0
+
+                if api_key:
+                    try:
+                        org_res = await self.apollo_api.enrich_organization(domain, api_key)
+                        if org_res.get("success") and org_res.get("organization"):
+                            org = org_res["organization"]
+                            org_meta = {
+                                "company_industry": org.get("industry", ""),
+                                "company_size": org.get("estimated_num_employees", ""),
+                                "annual_revenue": org.get("annual_revenue_printed", ""),
+                                "phone": org.get("phone", ""),
+                                "domain": org.get("primary_domain", domain)
+                            }
+                            domain = org_meta.get("domain", domain)
+                            try:
+                                headcount = int(org.get("estimated_num_employees", 0) or 0)
+                            except (ValueError, TypeError):
+                                headcount = 0
+                    except Exception:
+                        pass
+
+                generic_companies = {"private enterprise", "stealth", "self-employed", "freelance", "stealth startup", "confidential"}
+                is_generic_company = not company or company.lower().strip() in generic_companies
+                if is_generic_company or domain in ["privateenterprise.com", "company.com", "unknown.com", "stealth.com"]:
+                    is_generic_company = True
+
+                # Run Dual Pipeline Verification
+                ver_res = await self.verifier.verify_lead_email(
+                    first_name=first_name,
+                    last_name=last_name,
+                    domain=domain,
+                    middle_initial=middle_initial,
+                    headcount=headcount,
+                    role=headline,
+                    company_name=company
+                )
+
+                is_enterprise = bool(ver_res.get("is_enterprise_locked") or is_generic_company)
+                pipeline = "ENTERPRISE_LOCKED" if is_enterprise else ver_res.get("pipeline_type", "FREE_UNLOCKED")
+                provider = ver_res.get("mail_provider", "Custom")
+
+                # Check if email is invalid or 2-letter username
+                raw_email = ver_res.get("email")
+                if raw_email and len(raw_email.split("@")[0]) <= 2:
+                    is_enterprise = True
+                    pipeline = "ENTERPRISE_LOCKED"
+                    raw_email = None
+
+                # Determine display location
+                display_location = location
+                if org_meta.get("city") and org_meta.get("country"):
+                    display_location = f"{org_meta['city']}, {org_meta['country']}"
+                elif not display_location and target_location:
+                    display_location = target_location
+
+                is_guarded_record = is_enterprise or not raw_email or is_generic_company
+                if is_guarded_record or not raw_email:
+                    # Guarded records are hidden per user preference
+                    continue
+
+                email = raw_email
+                confidence = ver_res.get("confidence_score", 90)
+                method = ver_res.get("verification_method", "Verified Direct Inbox")
+
+                lead = Lead(
+                    id=str(uuid.uuid4()),
+                    name=name,
+                    headline=headline,
+                    role=headline or "Executive",
+                    company=company,
+                    location=display_location,
+                    linkedin_url=linkedin_url,
+                    email=email,
+                    email_status="verified",
+                    phone=org_meta.get("phone"),
+                    confidence_score=confidence,
+                    verification_method=method,
+                    mail_provider=provider,
+                    mx_host=ver_res.get("mx_host"),
+                    is_enterprise_locked=False,
+                    pipeline_type="FREE_UNLOCKED",
+                    status=LeadStatus.UNLOCKED,
+                    apollo_unlocked=True,
+                    source="Verified Direct",
+                    meta=org_meta
+                )
+                verified_leads.append(lead)
+                exclude_urls.add(linkedin_url)
+                yield await emit("log", {
+                    "message": f"✓ [{len(verified_leads)}/{target_limit}] {name} ({company} · {display_location}) → {email}"
+                })
+                yield await emit("lead_discovered", lead.model_dump())
+
+                await asyncio.sleep(0.04)
+
+                if len(verified_leads) >= target_limit:
+                    break
+
+            current_search_page += 1
 
         yield await emit("log", {
             "message": f"Done — Sourced {len(verified_leads)} verified prospects on Page {page}."

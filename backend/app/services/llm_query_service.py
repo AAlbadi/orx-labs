@@ -95,6 +95,7 @@ class LlmQueryService:
         if not api_key or not search_items:
             return search_items
 
+        models = ["gemini-2.5-flash", "gemini-1.5-flash"]
         system_instruction = (
             "You are an expert AI Lead Intelligence Engine. "
             "The input is a list of LinkedIn search results (some results contain MULTIPLE professionals combined). "

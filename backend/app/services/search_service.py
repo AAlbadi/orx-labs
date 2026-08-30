@@ -181,6 +181,12 @@ CATEGORY_SUB_ROLES = {
         "Talent Acquisition Lead",
         "HR Manager"
     ],
+    "yc_founders": [
+        '("Y Combinator" OR "YC") ("Founder" OR "Co-Founder" OR "CEO")',
+        '("YC W24" OR "YC S24" OR "YC W23" OR "YC S23" OR "YC W25" OR "YC S25" OR "YC W26" OR "YC S26") ("Founder" OR "CEO")',
+        '("Y Combinator") ("CEO" OR "Founder" OR "Co-founder")',
+        '("YC") ("Co-Founder" OR "Founder" OR "CTO")'
+    ],
     "founders": [
         "Founder",
         "Co-Founder",
@@ -189,6 +195,15 @@ CATEGORY_SUB_ROLES = {
         "Founding Partner",
         "President & Founder",
         "Executive Chairman"
+    ],
+    "marketing": [
+        "Chief Marketing Officer",
+        "CMO",
+        "VP of Marketing",
+        "Head of Marketing",
+        "Marketing Director",
+        "Director of Growth",
+        "Head of Growth"
     ],
     "engineering": [
         "CTO",
@@ -353,7 +368,11 @@ class SearchService:
         category = "general"
         role_terms = ""
 
-        if re.search(r'\b(?:vc|vcs|venture\s+capital|investor|investors|angel|angels|partner|partners|preseed|seed\s+fund|private\s+equity)\b', clean_query) or "vc" in user_prompt.lower():
+        if re.search(r'\b(?:yc|y\s+combinator|ycombinator)\b', clean_query) or "yc" in user_prompt.lower() or "y combinator" in user_prompt.lower():
+            category = "yc_founders"
+            role_terms = '("Y Combinator" OR "YC") ("Founder" OR "Co-Founder" OR "CEO")'
+
+        elif re.search(r'\b(?:vc|vcs|venture\s+capital|investor|investors|angel|angels|partner|partners|preseed|seed\s+fund|private\s+equity)\b', clean_query) or "vc" in user_prompt.lower():
             category = "venture_capital"
             role_terms = '("Venture Capital" OR "VC" OR "Partner" OR "Investor" OR "General Partner")'
 
@@ -365,6 +384,8 @@ class SearchService:
             category = "founders"
             if "ai" in clean_query or "ai" in user_prompt.lower():
                 role_terms = '("Founder" OR "Co-Founder" OR "CEO" OR "Owner") "AI"'
+            elif "saas" in clean_query or "saas" in user_prompt.lower():
+                role_terms = '("Founder" OR "Co-Founder" OR "CEO" OR "Owner") "SaaS"'
             else:
                 role_terms = '("Founder" OR "Co-Founder" OR "CEO" OR "Owner")'
 
@@ -621,7 +642,9 @@ class SearchService:
             else:
                 if not company and len(clean_seg) >= 2 and not SearchService.is_fake_company(clean_seg):
                     company = clean_seg
-                    break
+        if company:
+            company = re.sub(r'(?i)\b(?:y\s+combinator|yc|techstars|500\s+startups|500\s+global|w\d{2}|s\d{2}|p\d{2})\b', '', company).strip()
+            company = re.sub(r'[\(\)\[\]\|·•]', '', company).strip()
 
         return role, company
 

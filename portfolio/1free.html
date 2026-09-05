@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Dayti Pro • كود 1FREE شهر مجاناً</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%3E<text y=%2226%22 font-size=%2224%22>🥑</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Cairo', system-ui, sans-serif; }
+    html[dir="ltr"] body { font-family: 'Inter', system-ui, sans-serif; }
+    .pulse-glow { animation: pulseGlow 1.8s infinite ease-in-out; }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); transform: scale(1); }
+      50% { box-shadow: 0 0 35px rgba(16, 185, 129, 0.8); transform: scale(1.02); }
+    }
+    .bounce-arrow { animation: bounceArrow 1.2s infinite; }
+    @keyframes bounceArrow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col items-center justify-center p-4 relative overflow-x-hidden">
+
+  <!-- Background Ambient Glow -->
+  <div class="absolute -top-32 -left-32 w-80 h-80 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+  <div class="absolute -bottom-32 -right-32 w-80 h-80 bg-teal-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+  <!-- Top In-App Browser Warning Banner -->
+  <div id="inAppTopBanner" class="w-full max-w-md bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 p-3.5 rounded-2xl mb-3 shadow-lg flex items-center justify-between gap-3 border border-amber-300/40">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">⚠️</span>
+      <div class="text-xs font-black leading-tight text-right rtl:text-right ltr:text-left">
+        <span>لتفعيل العرض بدون حظر:</span><br>
+        <span class="font-bold opacity-90 text-[11px]">اضغط على النقاط الثلاث (•••) أعلى الشاشة واختر "فتح في Safari"</span>
+      </div>
+    </div>
+    <div class="text-2xl bounce-arrow">↗️</div>
+  </div>
+
+  <!-- Top Header Bar -->
+  <div class="w-full max-w-md flex justify-between items-center mb-3 px-2">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🥑</span>
+      <span class="font-extrabold text-sm tracking-tight text-white">Dayti <span class="text-emerald-400">Pro</span></span>
+    </div>
+    <button onclick="toggleLang()" id="langBtn" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition font-bold">
+      English
+    </button>
+  </div>
+
+  <!-- Card Container -->
+  <div class="w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-center backdrop-blur-xl relative z-10">
+    
+    <div class="space-y-2">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/25">🥑</div>
+      <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold border border-emerald-500/30">
+        <span>🍏</span>
+        <span id="badgeText">عرض شهر كامل مجاناً معتمد من Apple</span>
+      </div>
+      <h1 class="text-2xl font-black text-white pt-1" id="mainTitle">تفعيل شهر مجاناً في دايتي برو</h1>
+      <p class="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-xs mx-auto" id="mainDesc">
+        حساب السعرات والماكروز بمجرد تصوير الوجبة بالذكاء الاصطناعي 📸
+      </p>
+    </div>
+
+    <!-- Code Display Box -->
+    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+      <div class="text-[11px] text-slate-400 font-semibold" id="codeLabel">كود العرض الرسمي:</div>
+      <div class="flex items-center justify-center gap-3">
+        <span class="font-mono text-3xl font-black tracking-widest text-emerald-400" id="displayCode">1FREE</span>
+        <button onclick="copyCode()" class="p-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition text-xs font-bold flex items-center gap-1.5 border border-slate-700" id="copyBtn">
+          <span>📋</span>
+          <span id="copyBtnText">نسخ الكود</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="space-y-3 pt-1">
+      <button onclick="openInAppStore()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-slate-950 font-black text-base transition shadow-xl pulse-glow flex items-center justify-center gap-2">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.93-2.85-.9.04-1.98.6-2.61 1.34-.56.64-1.05 1.71-.92 2.74 1.01.08 2.02-.5 2.6-1.23z"/></svg>
+        <span id="redeemBtnText">فتح العرض مباشرة في App Store</span>
+      </button>
+
+      <a id="appStoreListingBtn" href="https://apps.apple.com/app/id6761498668" target="_blank" class="w-full py-2.5 px-4 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white text-xs font-bold transition border border-slate-700 flex items-center justify-center gap-1.5 block">
+        <span>📲</span>
+        <span id="listingBtnText">أو فتح صفحة التطبيق بالمتجر (تحميل دايتي)</span>
+      </a>
+    </div>
+
+    <!-- Manual Steps -->
+    <div class="pt-3 border-t border-slate-800 text-xs text-slate-400 space-y-2">
+      <div class="font-bold text-slate-300" id="stepsTitle">طريقة التفعيل من داخل التطبيق:</div>
+      <p class="leading-relaxed bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-[11px]" id="manualInstruction">
+        افتح تطبيق دايتي > انتقل إلى <strong>البروفايل</strong> > اضغط <strong>استرداد رمز العرض</strong> > واكتب: <strong class="text-emerald-400 font-mono text-xs">1FREE</strong>
+      </p>
+    </div>
+
+    <!-- Desktop QR Code -->
+    <div id="qrSection" class="hidden pt-3 border-t border-slate-800 space-y-2">
+      <p class="text-xs text-slate-400 font-semibold" id="qrText">امسح الكود من كاميرا الآيفون لتفعيل العرض فوراً:</p>
+      <div class="inline-block p-2.5 bg-white rounded-2xl shadow-md">
+        <img id="qrImage" src="" alt="QR Code" class="w-32 h-32">
+      </div>
+    </div>
+
+  </div>
+
+  <footer class="text-center text-xs text-slate-500 py-6">
+    <p>© 2026 Dayti App (دايتي) • متوافق 100% مع Apple StoreKit</p>
+  </footer>
+
+  <script>
+    const APP_ID = "6761498668";
+    const urlParams = new URLSearchParams(window.location.search);
+    const OFFER_CODE = (urlParams.get('code') || "1FREE").trim().toUpperCase();
+
+    const UNIVERSAL_URL = `https://apps.apple.com/redeem?ctx=offercodes&id=${APP_ID}&code=${OFFER_CODE}`;
+    const ITMS_URL = `itms-apps://apps.apple.com/redeem?ctx=offercodes&id=${APP_ID}&code=${OFFER_CODE}`;
+
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isInAppBrowser = /Instagram|FBAN|FBAV|TikTok|Snapchat|Twitter|Line|MicroMessenger/i.test(ua);
+
+    let currentLang = "ar";
+
+    const translations = {
+      ar: {
+        badge: "عرض شهر كامل مجاناً معتمد من Apple",
+        title: "تفعيل شهر مجاناً في دايتي برو",
+        desc: "حساب السعرات والماكروز بمجرد تصوير الوجبة بالذكاء الاصطناعي 📸",
+        codeLabel: "كود العرض الرسمي:",
+        copy: "نسخ الكود",
+        copied: "تم النسخ!",
+        btn: "فتح العرض مباشرة في App Store 🍏",
+        listing: "أو فتح صفحة التطبيق بالمتجر (تحميل دايتي)",
+        stepsTitle: "طريقة التفعيل من داخل التطبيق:",
+        manual: `افتح تطبيق دايتي > انتقل إلى <strong>البروفايل</strong> > اضغط <strong>استرداد رمز العرض</strong> > واكتب: <strong class="text-emerald-400 font-mono text-xs">${OFFER_CODE}</strong>`,
+        qr: "امسح الكود من كاميرا الآيفون لتفعيل العرض فوراً:"
+      },
+      en: {
+        badge: "Official 1-Month Free Apple Offer",
+        title: "Activate 1-Month Free Dayti Pro",
+        desc: "Instant AI nutrition and calorie analysis simply from a meal photo 📸",
+        codeLabel: "Official Offer Code:",
+        copy: "Copy Code",
+        copied: "Copied!",
+        btn: "Open Offer in App Store 🍏",
+        listing: "Or Open App Store Listing (Download Dayti)",
+        stepsTitle: "How to redeem inside the app:",
+        manual: `Open Dayti app > go to <strong>Profile</strong> > tap <strong>Redeem Offer Code</strong> > enter: <strong class="text-emerald-400 font-mono text-xs">${OFFER_CODE}</strong>`,
+        qr: "Scan with your iPhone camera to activate offer:"
+      }
+    };
+
+    function init() {
+      document.getElementById("displayCode").textContent = OFFER_CODE;
+      document.getElementById("manualInstruction").innerHTML = translations[currentLang].manual;
+      const banner = document.getElementById("inAppTopBanner");
+      if (isInAppBrowser) banner.classList.remove("hidden"); else banner.classList.add("hidden");
+
+      if (!isIOS) {
+        document.getElementById("qrSection").classList.remove("hidden");
+        document.getElementById("qrImage").src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(UNIVERSAL_URL)}`;
+      }
+    }
+
+    function openInAppStore() {
+      navigator.clipboard.writeText(OFFER_CODE).catch(() => {});
+      if (isIOS) {
+        window.location.href = ITMS_URL;
+        setTimeout(() => { window.location.href = UNIVERSAL_URL; }, 800);
+      } else {
+        window.location.href = UNIVERSAL_URL;
+      }
+    }
+
+    function toggleLang() {
+      currentLang = currentLang === "ar" ? "en" : "ar";
+      document.documentElement.lang = currentLang;
+      document.documentElement.dir = currentLang === "ar" ? "rtl" : "ltr";
+      document.getElementById("langBtn").textContent = currentLang === "ar" ? "English" : "العربية";
+
+      const t = translations[currentLang];
+      document.getElementById("badgeText").textContent = t.badge;
+      document.getElementById("mainTitle").textContent = t.title;
+      document.getElementById("mainDesc").textContent = t.desc;
+      document.getElementById("codeLabel").textContent = t.codeLabel;
+      document.getElementById("copyBtnText").textContent = t.copy;
+      document.getElementById("redeemBtnText").textContent = t.btn;
+      document.getElementById("listingBtnText").textContent = t.listing;
+      document.getElementById("stepsTitle").textContent = t.stepsTitle;
+      document.getElementById("manualInstruction").innerHTML = t.manual;
+      document.getElementById("qrText").textContent = t.qr;
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(OFFER_CODE).then(() => {
+        const txt = document.getElementById("copyBtnText");
+        txt.textContent = translations[currentLang].copied;
+        setTimeout(() => { txt.textContent = translations[currentLang].copy; }, 2000);
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>

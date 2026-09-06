@@ -4,6 +4,8 @@
   "rewrites": [
     { "source": "/1free", "destination": "/1free.html" },
     { "source": "/redeem", "destination": "/1free.html" },
-    { "source": "/dayti", "destination": "/1free.html" }
+    { "source": "/dayti", "destination": "/1free.html" },
+    { "source": "/bug/privacy", "destination": "/insect/privacy" },
+    { "source": "/bug/terms", "destination": "/insect/terms" }
   ]
 }

@@ -6,6 +6,8 @@
     { "source": "/redeem", "destination": "/1free.html" },
     { "source": "/dayti", "destination": "/1free.html" },
     { "source": "/bug/privacy", "destination": "/insect/privacy" },
-    { "source": "/bug/terms", "destination": "/insect/terms" }
+    { "source": "/bug/terms", "destination": "/insect/terms" },
+    { "source": "/slides/:path*", "destination": "/api/slide?path=:path*" },
+    { "source": "/api/auth/callback/pinterest", "destination": "/api/auth/callback/pinterest.html" }
   ]
 }

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pinterest Authorized - ORX Labs</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #161e31; border: 1px solid #2a3859; padding: 40px; border-radius: 16px; max-width: 600px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+    h1 { color: #e60023; margin-top: 0; }
+    .code-box { background: #0f172a; border: 1px solid #334155; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.1rem; word-break: break-all; color: #34d399; margin: 20px 0; }
+    button { background: #e60023; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    button:hover { background: #ad081b; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>📌 Pinterest Authorized!</h1>
+    <p>Copy the authorization code below and paste it back into your chat:</p>
+    <div id="codeDisplay" class="code-box">Extracting authorization code...</div>
+    <button onclick="copyCode()">📋 Copy Authorization Code</button>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const display = document.getElementById('codeDisplay');
+    if (code) {
+      display.innerText = code;
+    } else {
+      display.innerText = "No code found in URL. URL query was: " + window.location.search;
+    }
+    function copyCode() {
+      if (code) {
+        navigator.clipboard.writeText(code);
+        alert("Authorization code copied to clipboard!");
+      }
+    }
+  </script>
+</body>
+</html>

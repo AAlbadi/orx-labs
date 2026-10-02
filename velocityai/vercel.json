@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/v1/:path*",
+      "destination": "https://agents.orxlabs.com/api/v1/:path*"
+    },
+    {
+      "source": "/api/livekit/:path*",
+      "destination": "https://agents.orxlabs.com/api/livekit/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

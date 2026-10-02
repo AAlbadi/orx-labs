@@ -18,6 +18,8 @@
     { "source": "/feed/:path*", "destination": "https://agents.orxlabs.com/velocityapi/feed/:path*" },
     { "source": "/profile/:path*", "destination": "https://agents.orxlabs.com/velocityapi/profile/:path*" },
     { "source": "/encounters/:path*", "destination": "https://agents.orxlabs.com/velocityapi/encounters/:path*" },
+    { "source": "/admin", "destination": "https://agents.orxlabs.com/velocityapi/admin" },
+    { "source": "/admin/:path*", "destination": "https://agents.orxlabs.com/velocityapi/admin/:path*" },
     { "source": "/velocityai", "destination": "/velocityai/index.html" },
     { "source": "/velocityai/(.*)", "destination": "/velocityai/index.html" }
   ]

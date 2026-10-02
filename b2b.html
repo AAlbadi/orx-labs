@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Abdul Aziz Rashid Hamed Al Badi | B2B Business Consultancy & Market Maker — ORX Labs</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:#ffffff;color:#0f172a;font-family:'Inter',system-ui,-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+    
+    /* Header */
+    header{border-bottom:1px solid #e2e8f0;background:#ffffff;position:sticky;top:0;z-index:20}
+    .header-inner{max-width:820px;margin:0 auto;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+    .logo-group{display:flex;align-items:center;gap:12px}
+    .brand-title{font-size:16px;font-weight:800;color:#020617;text-decoration:none;letter-spacing:-0.02em}
+    .divider-v{width:1px;height:16px;background:#cbd5e1}
+    .tagline{font-size:12px;color:#64748b;font-weight:500}
+    .nav-actions{display:flex;align-items:center;gap:16px}
+    .back-link{font-size:12px;font-weight:600;color:#64748b;text-decoration:none;transition:color .15s}
+    .back-link:hover{color:#0f172a}
+    .btn-contact{font-size:12px;font-weight:600;background:#0f172a;color:#ffffff;padding:8px 16px;border-radius:6px;text-decoration:none;transition:background .15s}
+    .btn-contact:hover{background:#1e293b}
+
+    /* Main Container */
+    main{max-width:820px;margin:0 auto;padding:56px 24px 80px}
+    
+    /* Section 1: Identity */
+    .profile-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;background:#f1f5f9;border:1px solid #e2e8f0;font-size:11px;font-weight:600;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:16px}
+    h1{font-size:32px;font-weight:800;letter-spacing:-0.03em;color:#020617;margin-bottom:8px}
+    .role-title{font-size:18px;font-weight:600;color:#334155;margin-bottom:12px}
+    .lead-desc{font-size:15px;color:#475569;max-width:640px;line-height:1.65;margin-bottom:24px}
+    
+    /* Contact Box */
+    .contact-card{display:inline-flex;align-items:center;gap:12px;padding:12px 18px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}
+    .email-link{font-size:14px;font-weight:600;color:#0f172a;text-decoration:none}
+    .email-link:hover{color:#2563eb}
+    .btn-copy{background:transparent;border:none;cursor:pointer;padding:4px 8px;font-size:11px;font-weight:600;color:#64748b;border-radius:4px;border:1px solid #cbd5e1;transition:all .15s}
+    .btn-copy:hover{background:#e2e8f0;color:#0f172a}
+
+    /* Divider */
+    .section-sep{border:0;border-top:1px solid #e2e8f0;margin:44px 0}
+
+    /* Section 2: Online & Direct Presence */
+    .sec-title{font-size:18px;font-weight:700;color:#020617;margin-bottom:6px}
+    .sec-sub{font-size:13px;color:#64748b;margin-bottom:20px}
+    
+    .grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}
+    .card{padding:20px;border-radius:10px;border:1px solid #e2e8f0;background:#f8fafc}
+    .card-title{font-size:14px;font-weight:700;color:#0f172a;margin-bottom:6px}
+    .card-text{font-size:12px;color:#64748b;line-height:1.6;margin-bottom:12px}
+    .card-link{font-size:12px;font-weight:600;color:#0f172a;text-decoration:underline;text-underline-offset:3px}
+    
+    .offline-note{padding:16px 20px;border-radius:8px;background:#ffffff;border:1px solid #e2e8f0;font-size:12px;color:#475569;line-height:1.6}
+
+    /* Section 3: Core Practices */
+    .grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+    .practice-card{padding:18px;border-radius:8px;border:1px solid #e2e8f0}
+    .practice-title{font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px}
+    .practice-desc{font-size:12px;color:#64748b;line-height:1.6}
+
+    /* Section 4: CTA */
+    .cta-box{margin-top:36px;padding:28px;border-radius:12px;background:#0f172a;color:#ffffff;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+    .cta-title{font-size:16px;font-weight:700;color:#ffffff;margin-bottom:4px}
+    .cta-sub{font-size:12px;color:#94a3b8}
+    .cta-btn{padding:10px 20px;border-radius:6px;background:#ffffff;color:#0f172a;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .15s}
+    .cta-btn:hover{background:#f1f5f9}
+
+    /* Footer */
+    footer{border-top:1px solid #e2e8f0;background:#ffffff;padding:32px 24px;text-align:center;font-size:12px;color:#94a3b8}
+    .footer-inner{max-width:820px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+    @media(max-width:600px){
+      h1{font-size:26px}
+      .header-inner{padding:12px 16px}
+      main{padding:36px 16px 60px}
+      .tagline{display:none}
+      .footer-inner{flex-direction:column;text-align:center}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="header-inner">
+      <div class="logo-group">
+        <a href="/" class="brand-title">ORX LABS</a>
+        <div class="divider-v"></div>
+        <span class="tagline">Executive Profile & Consultancy</span>
+      </div>
+      <div class="nav-actions">
+        <a href="/" class="back-link">&#8592; Apps & Projects</a>
+        <a href="mailto:aalbadi1911@gmail.com" class="btn-contact">Contact</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    
+    <!-- Profile & Bio -->
+    <section>
+      <div class="profile-badge">Principal Advisor</div>
+      <h1>Abdul Aziz Rashid Hamed Al Badi</h1>
+      <div class="role-title">B2B Business Consultancy & Market Maker &bull; Strategic Connector</div>
+      <p class="lead-desc">
+        Specializing in commercial advisory, corporate matchmaking, enterprise deal structuring, and private market liquidity. Connecting institutions, buyers, and high-impact partners globally.
+      </p>
+
+      <div class="contact-card">
+        <span style="font-size:12px;color:#64748b;font-weight:500;">Direct Email:</span>
+        <a href="mailto:aalbadi1911@gmail.com" class="email-link">aalbadi1911@gmail.com</a>
+        <button class="btn-copy" onclick="copyEmail(this)">Copy</button>
+      </div>
+    </section>
+
+    <hr class="section-sep"/>
+
+    <!-- Where You Can Find My Business Online -->
+    <section>
+      <div class="sec-title">Where to Find My Business Online</div>
+      <div class="sec-sub">Verified corporate channels and digital presence.</div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">ORX Labs Studio</div>
+          <div class="card-text">Main developer portfolio, mobile applications, and software systems.</div>
+          <a href="/" class="card-link">orxlabs.com</a>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Official Social & Updates</div>
+          <div class="card-text">Product announcements, operational insights, and direct messaging on X.</div>
+          <a href="https://x.com/OrxLabs" target="_blank" rel="noopener" class="card-link">x.com/OrxLabs</a>
+        </div>
+      </div>
+
+      <div class="offline-note">
+        <strong>Direct & Offline Operations:</strong> Advisory and market making operations are conducted directly via private institutional mandates, bilateral introductions, and executive consultations.
+      </div>
+    </section>
+
+    <hr class="section-sep"/>
+
+    <!-- Practice Areas -->
+    <section>
+      <div class="sec-title">Core Practice Areas</div>
+      <div class="sec-sub">Executive B2B services and deal flow execution.</div>
+
+      <div class="grid-3">
+        <div class="practice-card">
+          <div class="practice-title">B2B Consultancy</div>
+          <div class="practice-desc">Enterprise business modeling, commercial advisory, corporate strategy, and operational acceleration.</div>
+        </div>
+
+        <div class="practice-card">
+          <div class="practice-title">Market Maker</div>
+          <div class="practice-desc">Counterparty discovery, bilateral trade matching, deal liquidity, and structured syndication.</div>
+        </div>
+
+        <div class="practice-card">
+          <div class="practice-title">Strategic Connector</div>
+          <div class="practice-desc">Direct high-trust bridges between buyers, enterprise vendors, founders, and capital partners.</div>
+        </div>
+      </div>
+
+      <div class="cta-box">
+        <div>
+          <div class="cta-title">Initiate a Discussion</div>
+          <div class="cta-sub">Available for private advisory mandates and partnership discussions.</div>
+        </div>
+        <a href="mailto:aalbadi1911@gmail.com" class="cta-btn">Send Inquiries &#8599;</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div>&copy; 2026 ORX LABS &bull; Abdul Aziz Rashid Hamed Al Badi</div>
+      <div>Contact: <a href="mailto:aalbadi1911@gmail.com" style="color:#0f172a;text-decoration:none;font-weight:600;">aalbadi1911@gmail.com</a></div>
+    </div>
+  </footer>
+
+  <script>
+    function copyEmail(btn) {
+      navigator.clipboard.writeText('aalbadi1911@gmail.com').then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>

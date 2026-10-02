@@ -2,12 +2,23 @@
   "framework": null,
   "cleanUrls": true,
   "rewrites": [
+    { "source": "/b2b", "destination": "/b2b.html" },
+    { "source": "/verify", "destination": "/b2b.html" },
+    { "source": "/consultancy", "destination": "/b2b.html" },
     { "source": "/1free", "destination": "/1free.html" },
     { "source": "/redeem", "destination": "/1free.html" },
     { "source": "/dayti", "destination": "/1free.html" },
     { "source": "/bug/privacy", "destination": "/insect/privacy" },
     { "source": "/bug/terms", "destination": "/insect/terms" },
     { "source": "/slides/:path*", "destination": "/api/slide?path=:path*" },
-    { "source": "/api/auth/callback/pinterest", "destination": "/api/auth/callback/pinterest.html" }
+    { "source": "/api/auth/callback/pinterest", "destination": "/api/auth/callback/pinterest.html" },
+    { "source": "/api/v1/:path*", "destination": "https://agents.orxlabs.com/velocityapi/api/v1/:path*" },
+    { "source": "/auth/:path*", "destination": "https://agents.orxlabs.com/velocityapi/auth/:path*" },
+    { "source": "/stage/:path*", "destination": "https://agents.orxlabs.com/velocityapi/stage/:path*" },
+    { "source": "/feed/:path*", "destination": "https://agents.orxlabs.com/velocityapi/feed/:path*" },
+    { "source": "/profile/:path*", "destination": "https://agents.orxlabs.com/velocityapi/profile/:path*" },
+    { "source": "/encounters/:path*", "destination": "https://agents.orxlabs.com/velocityapi/encounters/:path*" },
+    { "source": "/velocityai", "destination": "/velocityai/index.html" },
+    { "source": "/velocityai/(.*)", "destination": "/velocityai/index.html" }
   ]
 }
